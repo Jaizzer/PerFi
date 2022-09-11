@@ -41,7 +41,7 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return apology("Account succesfully created")
+    return apology("Account Created")
 
 
 @app.route("/history")
