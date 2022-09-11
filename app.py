@@ -41,7 +41,7 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return render_template("apology.html")
+    return apology("Account succesfully created")
 
 
 @app.route("/history")
@@ -155,12 +155,6 @@ def register():
         user_id = db.execute("SELECT id FROM users WHERE username = ?", username)[0]["id"]
 
         session["user_id"] = user_id
-
-        # Give user a database of transaction.
-        db.execute("CREATE TABLE user_? (id INTEGER PRIMARY KEY, company TEXT NOT NULL, symbol TEXT NOT NULL, shares REAL, price REAL, total REAL)", user_id)
-
-        # Ensure company name is unique
-        db.execute("CREATE UNIQUE INDEX idx_user_?_company ON user_? (company)", user_id, user_id)
 
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
