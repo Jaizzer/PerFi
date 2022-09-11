@@ -9,7 +9,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd
+from helpers import apology, login_required, usd
 
 # Configure application
 app = Flask(__name__)
@@ -97,8 +97,78 @@ def logout():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    return render_template("default.html")
+    
+    """Register user"""
+    if request.method == "POST":
 
+        # Add the user's entry into the userts table in the database.
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirm_password = request.form.get("confirmation")
+
+        # Initialize message.
+        message = "Error:"
+
+        # Error detector.
+        error_detector = 0
+
+        # Scenario 1: No username input.
+        if not username:
+            message = message + "\nNo username"
+            error_detector = 400
+
+        # Scenario 2: There is username, but not unique.
+        if len(db.execute(f"SELECT username FROM users WHERE username LIKE '{username}'")) != 0:
+            message = message + "\nUsername not unique"
+            error_detector = 400
+
+        # Validate password submitted.
+        # Scenario 1: No password input.
+        if not password:
+            message = message + "\nNo password"
+            error_detector = 400
+
+        # Scenario 2: Password and confirm password did not match.
+        elif password != confirm_password:
+            message = message + "\nPasswords did not match"
+            error_detector = 400
+
+        # Scenario 3: Password is not strong enough.
+        elif check_password_strength(password) != 5:
+            message = message + "\nPassword not strong enough!"
+
+        # User's registration has error/s.
+        if error_detector != 0:
+
+            # Redirect to apology page.
+            return apology(message, error_detector)
+
+        # User's registration is free from errors.
+
+        # Hash the user's password.
+        hash = werkzeug.security.generate_password_hash(password, method='pbkdf2:sha256', salt_length=8)
+
+        # Remember registrants inputs.
+        db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
+
+        # Get user id.
+        user_id = db.execute("SELECT id FROM users WHERE username = ?", username)[0]["id"]
+
+        session["user_id"] = user_id
+
+        # Give user a database of transaction.
+        db.execute("CREATE TABLE user_? (id INTEGER PRIMARY KEY, company TEXT NOT NULL, symbol TEXT NOT NULL, shares REAL, price REAL, total REAL)", user_id)
+
+        # Ensure company name is unique
+        db.execute("CREATE UNIQUE INDEX idx_user_?_company ON user_? (company)", user_id, user_id)
+
+        # Redirect to a route that shows user's profile porfolio.
+        return redirect("/login")
+
+    else:
+
+        # Display to user the place to register.
+        return render_template("register.html")
 
 def check_password_strength(password):
 
