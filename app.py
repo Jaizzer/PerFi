@@ -41,7 +41,7 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return render_template("default.html")
+    return render_template("apology.html")
 
 
 @app.route("/history")
@@ -82,7 +82,7 @@ def login():
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
-        return render_template("default.html")
+        return render_template("login.html")
 
 
 @app.route("/logout")
