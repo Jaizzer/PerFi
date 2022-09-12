@@ -42,7 +42,7 @@ def after_request(response):
 def index():
     
     if request.method == "POST":
-        
+        return apology("HELLO TEST 1")
     else:
         accounts = ["Bank1", "Bank2", "Cash"]
         categories = ["Expense", "Income", "Savings", "Transfer"]
