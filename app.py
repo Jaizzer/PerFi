@@ -44,6 +44,7 @@ def index():
         description = request.form.get("description")
         account = request.form.get("account")
         category = request.form.get("category")
+        amount = request.form.get("amount")
         return render_template("transaction_testing.html", category=category, description=description, account=account)
     else:
         accounts = ["Bank1", "Bank2", "Cash"]
