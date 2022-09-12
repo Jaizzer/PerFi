@@ -37,14 +37,14 @@ def after_request(response):
     return response
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
     if request.method == "POST":
         description = request.form.get("description")
         account = request.form.get("account")
         category = request.form.get("category")
-        return render_template("transaction_test.html", category=category, description=description, account=account)
+        return render_template("transaction_testing.html", category=category, description=description, account=account)
     else:
         accounts = ["Bank1", "Bank2", "Cash"]
         categories = ["Expense", "Income", "Savings", "Transfer"]
