@@ -40,9 +40,11 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    
     if request.method == "POST":
-        return apology("HELLO TEST 1")
+        description = request.form.get("description")
+        account = request.form.get("account")
+        category = request.form.get("category")
+        return render_template("transaction_test.html", category=category, description=description, account=account)
     else:
         accounts = ["Bank1", "Bank2", "Cash"]
         categories = ["Expense", "Income", "Savings", "Transfer"]
