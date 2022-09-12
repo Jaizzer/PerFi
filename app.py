@@ -1,6 +1,5 @@
 import os
 
-import werkzeug
 import string
 
 from cs50 import SQL
@@ -149,7 +148,7 @@ def register():
         # User's registration is free from errors.
 
         # Hash the user's password.
-        hash = werkzeug.security.generate_password_hash(password, method='pbkdf2:sha256', salt_length=8)
+        hash = generate_password_hash(password)
 
         # Remember registrants inputs.
         db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
