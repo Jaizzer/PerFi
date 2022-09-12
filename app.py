@@ -40,8 +40,13 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return apology("Home")
-
+    
+    if request.method == "POST":
+        
+    else:
+        accounts = ["Bank1", "Bank2", "Cash"]
+        categories = ["Expense", "Income", "Savings", "Transfer"]
+        return render_template("home.html", accounts=accounts, categories=categories)
 
 @app.route("/history")
 @login_required
@@ -157,7 +162,6 @@ def register():
         
         # Create user's transaction history database.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account TEXT, transaction_type TEXT, transaction_activity TEXT, lend_borrow INTEGER, amount INTEGER)", username)
-
         session["user_id"] = user_id
 
         # Redirect to a route that shows user's profile porfolio.
