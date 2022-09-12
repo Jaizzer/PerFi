@@ -41,13 +41,13 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return apology("Account Created")
+    return apology("Home")
 
 
 @app.route("/history")
 @login_required
 def history():
-    return render_template("default.html")
+    return apology("history")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -104,7 +104,9 @@ def register():
         # Add the user's entry into the userts table in the database.
         username = request.form.get("username")
         password = request.form.get("password")
-        confirm_password = request.form.get("confirmation")
+        confirm_password = request.form.get("confirm_password")
+
+        # Validate username submitted.
 
         # Initialize message.
         message = "Error:"
@@ -115,33 +117,34 @@ def register():
         # Scenario 1: No username input.
         if not username:
             message = message + "\nNo username"
-            error_detector = 400
+            error_detector = 1
 
         # Scenario 2: There is username, but not unique.
         if len(db.execute(f"SELECT username FROM users WHERE username LIKE '{username}'")) != 0:
             message = message + "\nUsername not unique"
-            error_detector = 400
+            error_detector = 1
 
         # Validate password submitted.
         # Scenario 1: No password input.
         if not password:
             message = message + "\nNo password"
-            error_detector = 400
+            error_detector = 1
 
         # Scenario 2: Password and confirm password did not match.
         elif password != confirm_password:
             message = message + "\nPasswords did not match"
-            error_detector = 400
+            error_detector = 1
 
         # Scenario 3: Password is not strong enough.
         elif check_password_strength(password) != 5:
             message = message + "\nPassword not strong enough!"
+            error_detector = 1
 
         # User's registration has error/s.
         if error_detector != 0:
 
             # Redirect to apology page.
-            return apology(message, error_detector)
+            return apology(message)
 
         # User's registration is free from errors.
 
