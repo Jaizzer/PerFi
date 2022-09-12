@@ -156,7 +156,7 @@ def register():
         user_id = db.execute("SELECT id FROM users WHERE username = ?", username)[0]["id"]
         
         # Create user's transaction history database.
-        db.execture("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account TEXT, transaction_type TEXT, transaction_activity TEXT, lend_borrow INTEGER, amount INTEGER)", username)
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account TEXT, transaction_type TEXT, transaction_activity TEXT, lend_borrow INTEGER, amount INTEGER)", username)
 
         session["user_id"] = user_id
 

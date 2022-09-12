@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In
+{% endblock %}
+
+{% block main %}
+    <form action="/" method="post">
+        <div style="float:left;" class="mb-3">
+            <input class="form-control mx-auto w-auto" id="description" name="description" placeholder="Description" type="text">
+        </div>
+        <div style="float:left;" class="mb-3">
+            <select name="bank-account">
+                <option disabled selected>Account</option>
+                {% for account in accounts %}
+                    <option value="{{ account }}">{{ account }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="float:left;" class="mb-3">
+            <select name="category">
+                <option disabled selected>Category</option>
+                {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Save</button>
+    </form>
+{% endblock %}
