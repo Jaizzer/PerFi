@@ -52,7 +52,7 @@ def index():
         return render_template("transaction_testing.html", transaction=transaction)
     else:
         # Load all user's accounts.
-        accounts = db.execute("SELECT account_name, balance FROM ?_accounts", session.get("username"))
+        accounts = db.execute("SELECT account_name, balance FROM ?", session.get("table_of_accounts"))
         categories = ["Expense", "Income", "Savings", "Transfer"]
         return render_template("home.html", accounts=accounts, categories=categories)
 
@@ -173,13 +173,17 @@ def register():
         session["user_id"] = user_id
         
         # Create user's default accounts.
-        db.execute("CREATE TABLE ?_accounts (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", username)
+        account_table_name = username + "_accounts"
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", account_table_name)
         for i in range(3):
             account_name = str(f"account_{i + 1}")
-            db.execute("INSERT INTO ?_accounts (account_name, balance) VALUES (?, ?)", username, account_name, 0)        
+            db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", account_table_name, account_name, 0)        
         
-        # Save usernmae into a session.
+        # Save username into a session.
         session["username"] = username
+        
+        # Save table of accounts name into a session.
+        session["table_of_accounts"] = account_table_name
         
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
