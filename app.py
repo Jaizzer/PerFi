@@ -1,5 +1,6 @@
 from ast import Interactive
 import os
+from pickle import GLOBAL
 
 import string
 
@@ -49,6 +50,23 @@ def index():
             "category" : request.form.get("category"),
             "amount" : request.form.get("amount", type=int)
         }
+        
+        
+        
+        
+        
+        #Tomorrow goal:
+            # Figure out how expense, income, and transfer works so that mathematicla operation could be worked out.
+            # Find out the best way to relate the transaction category and activity. For instance, if expense is the category, it must be tied to the "subtract operation"
+            # still it depends on the user, we should give them future means of changing the name of the category in which they are even free to name a category "expense" and
+            # it is tied with the mathematical operation "add"            
+        
+        
+        
+        
+        
+        
+        
         
         return render_template("transaction_testing.html", transaction=transaction)
     else:
