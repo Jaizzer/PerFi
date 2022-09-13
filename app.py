@@ -40,12 +40,13 @@ def after_request(response):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-        
+    
+    return apology(str(session.get("username")))
     if request.method == "POST":
         transaction = {
             description : request.form.get("description"),
             account : request.form.get("account"),
-            category :request.form.get("category"),
+            category : request.form.get("category"),
             amount : int(request.form.get("amount")),
         }
         
@@ -66,7 +67,7 @@ def login():
     """Log user in"""
 
     # Forget any user_id
-    session.clear()
+    #session.clear()
 
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
@@ -173,7 +174,7 @@ def register():
         session["user_id"] = user_id
         
         # Create user's default accounts.
-        account_table_name = username + "_accounts"
+        account_table_name = str(username + "_accounts")
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", account_table_name)
         for i in range(3):
             account_name = str(f"account_{i + 1}")
