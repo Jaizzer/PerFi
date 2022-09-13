@@ -192,6 +192,10 @@ def register():
             account_name = str(f"account_{i + 1}")
             db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", str(username + "_accounts"), account_name, 0)        
         
+        # Create user's default transaction categories.
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, category_name TEXT, category_activity TEXT)", str(username + "_categories"))
+        db.execute("INSERT INTO ? (category_name, category_activity) VALUES ('Expense', 'Deducts'), ('Income', 'Adds'), ('Transfer', 'Swaps'), ('Savings', 'Swaps')", str(username + "_categories"))
+        
         # Save username into a session.
         session["username"] = username
                 

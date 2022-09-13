@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS 'Jim' (
+    id INTEGER PRIMARY KEY, 
+    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    description TEXT, 
+    account TEXT, 
+    transaction_type TEXT, 
+    transaction_activity TEXT, 
+    lend_borrow INTEGER, 
+    amount INTEGER);
