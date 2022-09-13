@@ -41,11 +41,13 @@ def after_request(response):
 @login_required
 def index():
     if request.method == "POST":
-        description = request.form.get("description")
-        account = request.form.get("account")
-        category = request.form.get("category")
-        amount = int(request.form.get("amount"))
-        return render_template("transaction_testing.html", category=category, description=description, account=account, amount=amount)
+        transaction = {
+            description = request.form.get("description"),
+            account = request.form.get("account"),
+            category = request.form.get("category"),
+            amount = int(request.form.get("amount")),
+        }
+        return render_template("transaction_testing.html", transaction)
     else:
         accounts = ["Bank1", "Bank2", "Cash"]
         categories = ["Expense", "Income", "Savings", "Transfer"]
@@ -166,6 +168,12 @@ def register():
         # Create user's transaction history database.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account TEXT, transaction_type TEXT, transaction_activity TEXT, lend_borrow INTEGER, amount INTEGER)", username)
         session["user_id"] = user_id
+        
+        # Create user's default accounts.
+        db.execute("CREATE TABLE ?_accounts (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER", username)
+        for i in range(3):
+            account_name = str(f"account_{i + 1}")
+            db.execute("INSERT INTO ?_accounts (account_name, balance) VALUES (?, ?)", username, account_name, 0)
 
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
