@@ -41,7 +41,6 @@ def after_request(response):
 @login_required
 def index():
     
-    return apology(str(session.get("username")))
     if request.method == "POST":
         transaction = {
             description : request.form.get("description"),
@@ -52,10 +51,12 @@ def index():
         
         return render_template("transaction_testing.html", transaction=transaction)
     else:
+        # Load user's username from a session.
+        username = session.get("username")
         # Load all user's accounts.
-        accounts = db.execute("SELECT account_name, balance FROM ?", session.get("table_of_accounts"))
+        accounts = db.execute("SELECT account_name, balance FROM ?", str(username + "_accounts"))
         categories = ["Expense", "Income", "Savings", "Transfer"]
-        return render_template("home.html", accounts=accounts, categories=categories)
+        return render_template("home.html", accounts=accounts, categories=categories, username=username)
 
 @app.route("/history")
 @login_required
@@ -65,9 +66,6 @@ def history():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-
-    # Forget any user_id
-    #session.clear()
 
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
@@ -115,7 +113,7 @@ def register():
     if request.method == "POST":
 
         # Add the user's entry into the userts table in the database.
-        username = request.form.get("username")
+        username = str(request.form.get("username"))
         password = request.form.get("password")
         confirm_password = request.form.get("confirmation")
 
@@ -165,27 +163,19 @@ def register():
 
         # Remember registrants inputs.
         db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
-
-        # Get user id.
-        user_id = db.execute("SELECT id FROM users WHERE username = ?", username)[0]["id"]
         
         # Create user's transaction history database.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account TEXT, transaction_type TEXT, transaction_activity TEXT, lend_borrow INTEGER, amount INTEGER)", username)
-        session["user_id"] = user_id
-        
+                
         # Create user's default accounts.
-        account_table_name = str(username + "_accounts")
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", account_table_name)
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", str(username + "_accounts"))
         for i in range(3):
             account_name = str(f"account_{i + 1}")
-            db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", account_table_name, account_name, 0)        
+            db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", str(username + "_accounts"), account_name, 0)        
         
         # Save username into a session.
         session["username"] = username
-        
-        # Save table of accounts name into a session.
-        session["table_of_accounts"] = account_table_name
-        
+                
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
 
