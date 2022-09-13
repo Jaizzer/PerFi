@@ -1,3 +1,4 @@
+from ast import Interactive
 import os
 
 import string
@@ -43,10 +44,10 @@ def index():
     
     if request.method == "POST":
         transaction = {
-            description : request.form.get("description"),
-            account : request.form.get("account"),
-            category : request.form.get("category"),
-            amount : int(request.form.get("amount")),
+            "description" : request.form.get("description"),
+            "account" : request.form.get("account"),
+            "category" : request.form.get("category"),
+            "amount" : request.form.get("amount", type=int)
         }
         
         return render_template("transaction_testing.html", transaction=transaction)
