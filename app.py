@@ -40,16 +40,19 @@ def after_request(response):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
+        
     if request.method == "POST":
         transaction = {
-            description = request.form.get("description"),
-            account = request.form.get("account"),
-            category = request.form.get("category"),
-            amount = int(request.form.get("amount")),
+            description : request.form.get("description"),
+            account : request.form.get("account"),
+            category :request.form.get("category"),
+            amount : int(request.form.get("amount")),
         }
-        return render_template("transaction_testing.html", transaction)
+        
+        return render_template("transaction_testing.html", transaction=transaction)
     else:
-        accounts = ["Bank1", "Bank2", "Cash"]
+        # Load all user's accounts.
+        accounts = db.execute("SELECT account_name, balance FROM ?_accounts", session.get("username"))
         categories = ["Expense", "Income", "Savings", "Transfer"]
         return render_template("home.html", accounts=accounts, categories=categories)
 
@@ -170,11 +173,14 @@ def register():
         session["user_id"] = user_id
         
         # Create user's default accounts.
-        db.execute("CREATE TABLE ?_accounts (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER", username)
+        db.execute("CREATE TABLE ?_accounts (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", username)
         for i in range(3):
             account_name = str(f"account_{i + 1}")
-            db.execute("INSERT INTO ?_accounts (account_name, balance) VALUES (?, ?)", username, account_name, 0)
-
+            db.execute("INSERT INTO ?_accounts (account_name, balance) VALUES (?, ?)", username, account_name, 0)        
+        
+        # Save usernmae into a session.
+        session["username"] = username
+        
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
 
