@@ -48,17 +48,17 @@ def index():
         
     if request.method == "POST":
         
-        # Save transaction information into a dictionary.
-        transaction = {
-            "username": username,
-            "description": request.form.get("description"),
-            "account_1": request.form.get("account"),
-            "category": request.form.get("category"),
-            "amount": request.form.get("amount", type=float),
-            "lend_borrow": request.form.get("lend_borrow"),
-            "operation": db.execute("SELECT category_activity FROM ? WHERE category_name = ?", str(username + "_categories"), request.form.get("category"))[0]["category_activity"],
-            "account_2": request.form.get("account_to_transfer")
-        }
+        # Save all the transaction information into a list.
+        transaction = [
+            username, 
+            request.form.get("description"), 
+            request.form.get("account"), 
+            request.form.get("category"), 
+            request.form.get("amount", type=float), 
+            request.form.get("lend_borrow"),
+            db.execute("SELECT category_activity FROM ? WHERE category_name = ?", str(username + "_categories"), request.form.get("category"))[0]["category_activity"],
+            request.form.get("account_to_transfer")
+        ]
         
         # Save transaction values to a list.
         transaction_values = list(transaction.values())
