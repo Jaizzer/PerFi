@@ -76,9 +76,8 @@ def index():
         # Insert transaction to the user history.
         db.execute("INSERT INTO {} (description, account_1, category, amount, lend_borrow, operation, 'account_2') VALUES ('{}', '{}', '{}', {}, '{}', '{}', '{}')".format(*transaction_values))
         
-        # Render template of the history.
-                    
-        return render_template("transaction_testing.html", transaction=transaction)
+        # Redirect user to the transaction history.
+        return redirect("/history")
     else:
         # Load all user's accounts.
         accounts = db.execute("SELECT account_name, balance FROM ?", str(username + "_accounts"))
@@ -88,7 +87,10 @@ def index():
 @app.route("/history")
 @login_required
 def history():
-    return apology("history")
+    """Show history of transactions"""
+    transactions = db.execute("SELECT * FROM ? ORDER BY id DESC", session.get("username"))
+
+    return render_template("history.html", transactions=transactions)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
