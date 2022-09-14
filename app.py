@@ -45,6 +45,7 @@ def index():
     
     # Load user's username from a session.
     username = session.get("username")
+        
     if request.method == "POST":
         
         # Save transaction information into a dictionary.
@@ -79,9 +80,14 @@ def index():
         # Redirect user to the transaction history.
         return redirect("/history")
     else:
-        # Load all user's accounts.
+        # Load all user's added  accounts.
         accounts = db.execute("SELECT account_name, balance FROM ?", str(username + "_accounts"))
-        categories = ["Expense", "Income", "Savings", "Transfer"]
+        
+        # Load user's added categories.
+        categories_list = db.execute("SELECT category_name FROM ?", str(username + "_categories"))
+        categories = []
+        for category in categories_list:
+            categories.append(category["category_name"])
         return render_template("home.html", accounts=accounts, categories=categories, username=username)
 
 @app.route("/history")
@@ -115,8 +121,8 @@ def login():
             return apology("invalid username and/or password", 403)
 
         # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-
+        session["username"] = rows[0]["username"]
+        
         # Redirect user to home page
         return redirect("/")
 
@@ -133,7 +139,7 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect("/")
+    return redirect("/login")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -194,7 +200,7 @@ def register():
         db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
         
         # Create user's transaction history database.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account_1 TEXT, category TEXT, amount REAL, lend_borrow INTEGER, operation TEXT, account_2 TEXT)", username)
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT (datetime('now', 'localtime')), description TEXT, account_1 TEXT, category TEXT, amount REAL, lend_borrow INTEGER, operation TEXT, account_2 TEXT)", username)
                 
         # Create user's default accounts.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance REAL)", str(username + "_accounts"))
@@ -205,9 +211,6 @@ def register():
         # Create user's default transaction categories.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, category_name TEXT, category_activity TEXT)", str(username + "_categories"))
         db.execute("INSERT INTO ? (category_name, category_activity) VALUES ('Expense', 'Deducts'), ('Income', 'Adds'), ('Transfer', 'Transfers'), ('Savings', 'Transfers')", str(username + "_categories"))
-        
-        # Save username into a session.
-        session["username"] = username
                 
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
