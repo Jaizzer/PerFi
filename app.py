@@ -60,22 +60,33 @@ def index():
             request.form.get("account_to_transfer")
         ]
         
-        # Save transaction values to a list.
-        transaction_values = list(transaction.values())
+        
+        # Pivot on how to setup accounts especially in debt. Check paper 33
+        
+        
+        
                 
+        # Check whether the user lend or borrowed money.
+        if transaction[5] == "Lend":
+            # Create or insert into a database of lending transactions.
+            print("lend")
+        elif transaction[5] == "Borrow":
+            # Create or insert into a database of borrowing transactions.
+            print("borrow")
+        
         # Update the selected account.
-        if transaction["operation"] == "Adds":
-            db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_1"])
+        if transaction[6] == "Adds":
+            db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction[4], transaction[2])
             
-        elif transaction["operation"] == "Deducts":
-            db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_1"])            
+        elif transaction[6] == "Deducts":
+            db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction[4], transaction[2])            
         
         else:
-            db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_1"])
-            db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_2"])
-
+            db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction[4], transaction[2])
+            db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction[4], transaction[7])
+            
         # Insert transaction to the user history.
-        db.execute("INSERT INTO {} (description, account_1, category, amount, lend_borrow, operation, 'account_2') VALUES ('{}', '{}', '{}', {}, '{}', '{}', '{}')".format(*transaction_values))
+        db.execute("INSERT INTO {} (description, account_1, category, amount, lend_borrow, operation, 'account_2') VALUES ('{}', '{}', '{}', {}, '{}', '{}', '{}')".format(*transaction))
         
         # Redirect user to the transaction history.
         return redirect("/history")
