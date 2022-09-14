@@ -43,35 +43,43 @@ def after_request(response):
 @login_required
 def index():
     
+    # Load user's username from a session.
+    username = session.get("username")
     if request.method == "POST":
+        
+        # Save transaction information into a dictionary.
         transaction = {
-            "description" : request.form.get("description"),
-            "account" : request.form.get("account"),
-            "category" : request.form.get("category"),
-            "amount" : request.form.get("amount", type=int)
+            "username": username,
+            "description": request.form.get("description"),
+            "account_1": request.form.get("account"),
+            "category": request.form.get("category"),
+            "amount": request.form.get("amount", type=float),
+            "lend_borrow": request.form.get("lend_borrow"),
+            "operation": db.execute("SELECT category_activity FROM ? WHERE category_name = ?", str(username + "_categories"), request.form.get("category"))[0]["category_activity"],
+            "account_2": request.form.get("account_to_transfer")
         }
         
+        # Save transaction values to a list.
+        transaction_values = list(transaction.values())
+                
+        # Update the selected account.
+        if transaction["operation"] == "Adds":
+            db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_1"])
+            
+        elif transaction["operation"] == "Deducts":
+            db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_1"])            
         
+        else:
+            db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_1"])
+            db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction["amount"], transaction["account_2"])
+
+        # Insert transaction to the user history.
+        db.execute("INSERT INTO {} (description, account_1, category, amount, lend_borrow, operation, 'account_2') VALUES ('{}', '{}', '{}', {}, '{}', '{}', '{}')".format(*transaction_values))
         
-        
-        
-        #Tomorrow goal:
-            # Figure out how expense, income, and transfer works so that mathematicla operation could be worked out.
-            # Find out the best way to relate the transaction category and activity. For instance, if expense is the category, it must be tied to the "subtract operation"
-            # still it depends on the user, we should give them future means of changing the name of the category in which they are even free to name a category "expense" and
-            # it is tied with the mathematical operation "add"            
-        
-        
-        
-        
-        
-        
-        
-        
+        # Render template of the history.
+                    
         return render_template("transaction_testing.html", transaction=transaction)
     else:
-        # Load user's username from a session.
-        username = session.get("username")
         # Load all user's accounts.
         accounts = db.execute("SELECT account_name, balance FROM ?", str(username + "_accounts"))
         categories = ["Expense", "Income", "Savings", "Transfer"]
@@ -184,17 +192,17 @@ def register():
         db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
         
         # Create user's transaction history database.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account TEXT, transaction_type TEXT, transaction_activity TEXT, lend_borrow INTEGER, amount INTEGER)", username)
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, description TEXT, account_1 TEXT, category TEXT, amount REAL, lend_borrow INTEGER, operation TEXT, account_2 TEXT)", username)
                 
         # Create user's default accounts.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance INTEGER)", str(username + "_accounts"))
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance REAL)", str(username + "_accounts"))
         for i in range(3):
             account_name = str(f"account_{i + 1}")
             db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", str(username + "_accounts"), account_name, 0)        
         
         # Create user's default transaction categories.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, category_name TEXT, category_activity TEXT)", str(username + "_categories"))
-        db.execute("INSERT INTO ? (category_name, category_activity) VALUES ('Expense', 'Deducts'), ('Income', 'Adds'), ('Transfer', 'Swaps'), ('Savings', 'Swaps')", str(username + "_categories"))
+        db.execute("INSERT INTO ? (category_name, category_activity) VALUES ('Expense', 'Deducts'), ('Income', 'Adds'), ('Transfer', 'Transfers'), ('Savings', 'Transfers')", str(username + "_categories"))
         
         # Save username into a session.
         session["username"] = username
