@@ -27,10 +27,10 @@
                     <td>{{ transaction.id }}</td>
                     <td>{{ transaction.time }}</td>
                     <td>{{ transaction.description }}</td>
-                    <td>{{ transaction.account_1 }}</td>
+                    <td>{{ transaction.account }}</td>
                     <td>{{ transaction.category }}</td>
                     <td>{{ transaction.amount | usd }}</td>
-                    <td>{{ transaction.account_2 }}</td>
+                    <td>{{ transaction.transfer_account }}</td>
                 </tr>
             {% endfor %}
         </tbody>

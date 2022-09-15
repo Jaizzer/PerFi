@@ -49,16 +49,20 @@ def index():
     if request.method == "POST":
         
         # Save all the transaction information into a list.
-        transaction = [
-            username, 
+        session["transaction"] = [
+            username,
             request.form.get("description"), 
-            request.form.get("account"), 
             request.form.get("category"), 
             request.form.get("amount", type=float), 
-            request.form.get("lend_borrow"),
-            db.execute("SELECT category_activity FROM ? WHERE category_name = ?", str(username + "_categories"), request.form.get("category"))[0]["category_activity"],
-            request.form.get("account_to_transfer")
+            request.form.get("account")
         ]
+                
+        # Get the corresponding route code.
+        route_code = db.execute("SELECT operation, lend_borrow FROM ? WHERE category_name = ?", str(username + "_categories"), session["transaction"][2])[0]
+        
+        # Redirect to the corresponding route.
+        return redirect(f"/{route_code['operation']}_{route_code['lend_borrow']}")
+        
         
         
         # Pivot on how to setup accounts especially in debt. Check paper 33
@@ -75,10 +79,10 @@ def index():
             print("borrow")
         
         # Update the selected account.
-        if transaction[6] == "Adds":
+        if transaction[6] == 1:
             db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(username + "_accounts"), transaction[4], transaction[2])
             
-        elif transaction[6] == "Deducts":
+        elif transaction[6] == 2:
             db.execute("UPDATE ? SET balance = balance - ? WHERE account_name = ?", str(username + "_accounts"), transaction[4], transaction[2])            
         
         else:
@@ -100,6 +104,42 @@ def index():
         for category in categories_list:
             categories.append(category["category_name"])
         return render_template("home.html", accounts=accounts, categories=categories, username=username)
+
+
+@app.route("/1_0")
+@login_required
+def one_zero():
+    
+    # Update user's selected account.
+    db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(session["transaction"][0] + "_accounts"), session["transaction"][3], session["transaction"][4])
+    
+    #return apology(str(session[]))
+    
+    # Update user's transaction history.
+    db.execute("INSERT INTO {} (description, category, operation, amount, lend_borrow, account, transfer_account) VALUES ('{}', '{}', 1, {}, 0, '{}', 'None')".format(*session["transaction"]))
+
+    return redirect("/history")
+    
+@app.route("/1_1")
+@login_required
+def one_one():
+    return apology("Borrowed Income")
+
+@app.route("/2_0")
+@login_required
+def two_zero():
+    return apology("Normal Expense")
+
+@app.route("/2_2")
+@login_required
+def two_one():
+    return apology("Lended Expense")
+
+@app.route("/3_0")
+@login_required
+def three_zero():
+    return apology("transfer")
+
 
 @app.route("/history")
 @login_required
@@ -212,17 +252,17 @@ def register():
         db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
         
         # Create user's transaction history database.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT (datetime('now', 'localtime')), description TEXT, account_1 TEXT, category TEXT, amount REAL, lend_borrow INTEGER, operation TEXT, account_2 TEXT)", username)
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT (datetime('now', 'localtime')), description TEXT, amount REAL, operation INTEGER, category TEXT, lend_borrow INTEGER, account TEXT, transfer_account TEXT)", username)
                 
         # Create user's default accounts.
         db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance REAL)", str(username + "_accounts"))
         for i in range(3):
-            account_name = str(f"account_{i + 1}")
+            account_name = str(f"Account {i + 1}")
             db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", str(username + "_accounts"), account_name, 0)        
         
         # Create user's default transaction categories.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, category_name TEXT, category_activity TEXT)", str(username + "_categories"))
-        db.execute("INSERT INTO ? (category_name, category_activity) VALUES ('Expense', 'Deducts'), ('Income', 'Adds'), ('Transfer', 'Transfers'), ('Savings', 'Transfers')", str(username + "_categories"))
+        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, category_name TEXT, operation INTEGER, lend_borrow INTEGER)", str(username + "_categories"))
+        db.execute("INSERT INTO ? (category_name, operation, lend_borrow) VALUES ('Expense', 2, 0), ('Income', 1, 0), ('Transfer', 3, 0), ('Savings', 3, 0), ('Debt', 1, 1), ('Lend', 2, 2)", str(username + "_categories"))
                 
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
