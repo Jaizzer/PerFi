@@ -106,7 +106,8 @@ def one_one():
         return redirect("/debt")
 
     else:
-        return render_template("debt_receivable.html", category=session["transaction"][2])
+        debts_receivables  =  db.execute("SELECT name, type, balance FROM ?", str(username + "_debt_receivable"))
+        return render_template("lend_borrow.html", category=session["transaction"][2], debts_receivables=debts_receivables)
 
 @app.route("/2_0")
 @login_required
