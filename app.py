@@ -64,9 +64,7 @@ def index():
         return redirect(f"/{route_code['operation']}_{route_code['lend_borrow']}")
         
         
-        
-        # Pivot on how to setup accounts especially in debt. Check paper 33
-        
+                
         
         
                 
@@ -120,6 +118,11 @@ def one_zero():
 
     return redirect("/history")
     
+    
+    
+    # Goal
+        # Complete all other operations
+
 @app.route("/1_1")
 @login_required
 def one_one():
