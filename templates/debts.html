@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Debt
+{% endblock %}
+
+{% block main %}
+<h2>Debt</h2><hr>
+
+<div class="section">
+    <table class="table">
+        <thead>
+            <tr>
+                <td>Name</td>
+                <td>Amount</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for debt in debts %}
+                <tr>
+                    <td>{{ debt.name }}</td>
+                    <td>{{ debt.balance | usd }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

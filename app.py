@@ -3,6 +3,7 @@ import os
 from pickle import GLOBAL
 
 import string
+from tokenize import Name
 
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
@@ -93,21 +94,49 @@ def one_one():
     
     if request.method == "POST":
         
+        # Load user's username.
+        username = session.get("username")
+        
         # Get the name that lend or borrowed money from the user.
         name = request.form.get("name")
-        
-        # Ge the amount of money involved.
+                
+        # Get the amount of money involved.
         amount = session["transaction"][3]
         
-        # Update the database with the name and new amount.
-        
-        
-        # Redirect to user to the debt list.
-        return redirect("/debt")
+        # Check if the name is already in the database.
+        owed = db.execute("SELECT name FROM ? WHERE name = ?", str(username + "_debt_receivable"), name)
+        if len(owed) == 0:
+            db.execute("INSERT INTO ? (name, type, balance) VALUES (?, 1, ?)", str(username + "_debt_receivable"), name, amount)
+        else:
+            db.execute("UPDATE ? SET balance = balance + ? WHERE name = ?",  str(username + "_debt_receivable"), amount, name)
+                    
+        # Process user's accounts.
+        return redirect("/1_0")
 
     else:
-        debts_receivables  =  db.execute("SELECT name, type, balance FROM ?", str(username + "_debt_receivable"))
+        debts_receivables  =  db.execute("SELECT name, type, balance FROM ? WHERE type =  1", str(session["username"] + "_debt_receivable"))
         return render_template("lend_borrow.html", category=session["transaction"][2], debts_receivables=debts_receivables)
+
+
+@app.route("/debt")
+@login_required
+def debt():
+    
+    # Load user's debt list from the databse.
+    debts = db.execute("SELECT * FROM ? WHERE type = 1", str(session["username"] + "_debt_receivable"))
+    
+    return render_template("debts.html", debts=debts)
+
+
+@app.route("/receivable")
+@login_required
+def receivable():
+
+    # Load user's receivable list from the databse.
+    receivables = db.execute("SELECT * FROM ? WHERE type = 2", str(session["username"] + "_debt_receivable"))
+    
+    return render_template("receivable.html", receivables=receivables)
+
 
 @app.route("/2_0")
 @login_required
@@ -121,10 +150,35 @@ def two_zero():
 
     return redirect("/history")
 
-@app.route("/2_2")
+
+@app.route("/2_2", methods=["GET", "POST"])
 @login_required
-def two_one():
-    return apology("Lended Expense")
+def two_two():
+    
+    if request.method == "POST":
+        
+        # Load user's username.
+        username = session.get("username")
+        
+        # Get the name that lend or borrowed money from the user.
+        name = request.form.get("name")
+                
+        # Get the amount of money involved.
+        amount = session["transaction"][3]
+        
+        # Check if the name is already in the database.
+        receivable = db.execute("SELECT name FROM ? WHERE name = ?", str(username + "_debt_receivable"), name)
+        if len(receivable) == 0:
+            db.execute("INSERT INTO ? (name, type, balance) VALUES (?, 2, ?)", str(username + "_debt_receivable"), name, amount)
+        else:
+            db.execute("UPDATE ? SET balance = balance + ? WHERE name = ?",  str(username + "_debt_receivable"), amount, name)
+                    
+        # Process user's accounts.
+        return redirect("/2_0")
+
+    else:
+        debts_receivables  =  db.execute("SELECT name, type, balance FROM ? WHERE type = 2", str(session["username"] + "_debt_receivable"))
+        return render_template("borrow_lend.html", category=session["transaction"][2], debts_receivables=debts_receivables)
 
 @app.route("/3_0", methods=["GET", "POST"])
 @login_required

@@ -6,7 +6,7 @@
 
 {% block main %}
     <div align="center">
-        <form action="/1_1" method="post">
+        <form action="/2_2" method="post">
             <div style="float:center;" class="mb-3">
                 <input class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
             </div>
@@ -15,10 +15,10 @@
     </div>
 
     <div align="center">
-        <form action="/1_1" method="post">
+        <form action="/2_2" method="post">
             <div style="float:center;" class="mb-3">
                 <select name="name">
-                    <option disabled selected>Owed</option>
+                    <option disabled selected>Receivable</option>
                     {% for debt_receivable in debts_receivables %}
                         <option value="{{ debt_receivable.name }}">{{ debt_receivable.name}}</option>
                     {% endfor %}

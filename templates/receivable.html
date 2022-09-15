@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Receivable
+{% endblock %}
+
+{% block main %}
+<h2>Receivable</h2><hr>
+
+<div class="section">
+    <table class="table">
+        <thead>
+            <tr>
+                <td>Name</td>
+                <td>Amount</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receivable in receivables %}
+                <tr>
+                    <td>{{ receivable.name }}</td>
+                    <td>{{ receivable.balance | usd }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
