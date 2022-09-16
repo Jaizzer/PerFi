@@ -1,0 +1,86 @@
+
+
+Normal operation route:
+
+if zero (income/expense)
+    - check if user borrowed or lend
+    if yes:
+        render redirect("lend_borrow")
+    else:
+        operations = positive/negative
+        
+        (operation * amount) + user's account
+    
+else (transfer):
+    subtract account 1 by amount
+    add account 2 by amoun
+
+-insert into user all the transaction information
+
+
+
+Lend_borrow route:
+    
+    if post:
+        operation = positive_negative
+        get the name of the person involved
+
+        operations = positive/negative
+        create name = str(operation * 1)
+        
+        Check if user exist:
+        -if len(db.select) is greater than 1 - user exists
+
+        insert intwo table if not exist where the category is = operation
+        (operation * amount) + user's account
+
+        
+
+    else:
+        render template with form that asks the name, or shows the possible existing name in the database.
+
+
+
+
+
+insert into users transaction history.
+
+
+operation = positive/negative
+
+if category is 1:
+    -positive money to user's account
+
+    if category is 1:
+        suffix = str(operation * 1) +
+        - update/create database named: suffix +  "_name_of_database"
+        return redirect to suffix + "_website_name"
+
+else:
+    -subtract money from account 1
+    -add money to account 2
+
+return redirect("/history")
+
+
+
+
+
+
+
+
+if category is 0
+    - Add money to user's account
+    if category_category is 1
+    - create/update user's debt list
+
+if category is 1
+    - Subtract money to user's account
+    if category_category is 1
+    -create/update user's receivable list
+
+if category is 2
+    - subtract from account 1
+    -add to account 2
+
+- Insert into transaction all the values.

@@ -75,7 +75,6 @@ def index():
             categories.append(category["category_name"])
         return render_template("home.html", accounts=accounts, categories=categories, username=username)
 
-
 @app.route("/1_0")
 @login_required
 def one_zero():
@@ -318,21 +317,56 @@ def register():
         # Remember registrants inputs.
         db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
         
-        # Create user's transaction history database.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, time TIMESTAMP DEFAULT (datetime('now', 'localtime')), description TEXT, amount REAL, operation INTEGER, category TEXT, lend_borrow INTEGER, account TEXT, transfer_account TEXT)", username)
-                
-        # Create user's default accounts.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, account_name TEXT, balance REAL)", str(username + "_accounts"))
+        # Create user table's name.
+        table_name = [
+            str(username + "_accounts"),
+            str(username + "_categories"),
+            username,
+            str(username + "_debt_receivable")
+        ]
+        # Store table names into a session.
+        session["table_name"] = table_name
+        
+        # Create users' account database.
+        db.execute("CREATE TABLE ? (\
+            id INTEGER PRIMARY KEY,\
+            account_name TEXT,\
+            account_balance REAL)", table_name[0])
+        
+        # Populate user's account with default accounts.
         for i in range(3):
             account_name = str(f"Account {i + 1}")
-            db.execute("INSERT INTO ? (account_name, balance) VALUES (?, ?)", str(username + "_accounts"), account_name, 0)        
+            db.execute("INSERT INTO ? (account_name, account_balance) VALUES (?, ?)", table_name[0], account_name, 0)        
+
+        # Create users' category database.
+        db.execute("CREATE TABLE ? (\
+            id INTEGER PRIMARY KEY,\
+            category_name TEXT,\
+            category_operation INTEGER,\
+            lend_borrow INTEGER)", table_name[1])
         
-        # Create user's default transaction categories.
-        db.execute("CREATE TABLE ? (id INTEGER PRIMARY KEY, category_name TEXT, operation INTEGER, lend_borrow INTEGER)", str(username + "_categories"))
-        db.execute("INSERT INTO ? (category_name, operation, lend_borrow) VALUES ('Expense', 2, 0), ('Income', 1, 0), ('Transfer', 3, 0), ('Savings', 3, 0), ('Debt', 1, 1), ('Lend', 2, 2)", str(username + "_categories"))
-        
+        # Populate user's transaction category with dafault categories.
+        db.execute("INSERT INTO ? (\
+            category_name, category_operation, lend_borrow)\
+            VALUES ('Income', 1, 0), ('Expense', -1, 0),\
+            ('Transfer', 0, 0), ('Savings', 0, 0),\
+            ('Debt', 1, 1), ('Lend', -1, 1)", table_name[1])
+
+        # Create user's transaction history database.
+        db.execute("CREATE TABLE ? (\
+            id INTEGER PRIMARY KEY,\
+            time TIMESTAMP DEFAULT (datetime('now', 'localtime')),\
+            description TEXT,\
+            amount REAL,\
+            category_id INTEGER,\
+            account1_id,\
+            account2_id,\
+            FOREIGN KEY(category_id) REFERENCES ?(id),\
+            FOREIGN KEY(account1_id) REFERENCES ?(id),\
+            FOREIGN KEY (account2_id) REFERENCES ?(id))", table_name[2], table_name[1], table_name[0], table_name[0])
+                
         # Create user's debt and receivable tables.
-        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, type INTEGER, balance REAL)",  str(username + "_debt_receivable"))
+        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL)",  table_name[3])
                 
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
