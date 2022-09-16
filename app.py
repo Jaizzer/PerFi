@@ -44,36 +44,72 @@ def after_request(response):
 @login_required
 def index():
     
-    # Load user's username from a session.
-    username = session.get("username")
+    # Load user's table name.
+    table_name = session["table_name"]
         
     if request.method == "POST":
         
         # Save all the transaction information into a list.
         session["transaction"] = [
-            username,
+            session["username"],
             request.form.get("description"), 
             request.form.get("category"), 
             request.form.get("amount", type=float), 
             request.form.get("account")
         ]
                 
-        # Get the corresponding route code.
-        route_code = db.execute("SELECT operation, lend_borrow FROM ? WHERE category_name = ?", str(username + "_categories"), session["transaction"][2])[0]
+        # Get the operation code.
+        route_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
         
+        # Choose route name base on operation code.
+        if route_code == 0:
+            route_code = "regular"
+        else:
+            route_code = "complex"
+            
         # Redirect to the corresponding route.
-        return redirect(f"/{route_code['operation']}_{route_code['lend_borrow']}")
+        return redirect(f"/{route_code}")
                  
     else:
         # Load all user's added  accounts.
-        accounts = db.execute("SELECT account_name, balance FROM ?", str(username + "_accounts"))
+        accounts = db.execute("SELECT account_name, account_balance FROM ?", table_name[0])
         
         # Load user's added categories.
-        categories_list = db.execute("SELECT category_name FROM ?", str(username + "_categories"))
-        categories = []
-        for category in categories_list:
-            categories.append(category["category_name"])
-        return render_template("home.html", accounts=accounts, categories=categories, username=username)
+        categories = db.execute("SELECT category_name FROM ?", table_name[1])
+        return render_template("home.html", accounts=accounts, categories=categories, username=table_name[2])
+
+
+@app.route("/regular")
+@login_required
+def regular():
+    
+    # Load user's table's name from a session.
+    table_name = session["table_name"]
+    
+    # Load user's current transaction information from a session.
+    transaction = session["transaction"]
+    
+    # Choose what operation to perform based on the category.
+    operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
+    
+    # Update user's selected account.
+    db.execute("UPDATE ? SET account_balance = account_balance + ?\
+        WHERE account_name = ?", table_name[0], (operation * transaction[3]), transaction[4])
+        
+    # Update user's transaction history.
+    db.execute("INSERT INTO {} (description, category_name, amount, account,\
+        transfer_account) VALUES ('{}', '{}', {}, '{}', 'None')".format(*transaction))
+
+    
+    
+    return redirect("/history")
+    
+    # Income/Expense.
+    
+    
+    # Transfer/Savings
+    print("hello")
+
 
 @app.route("/1_0")
 @login_required
@@ -83,7 +119,7 @@ def one_zero():
     db.execute("UPDATE ? SET balance = balance + ? WHERE account_name = ?", str(session["transaction"][0] + "_accounts"), session["transaction"][3], session["transaction"][4])
         
     # Update user's transaction history.
-    db.execute("INSERT INTO {} (description, category, operation, amount, lend_borrow, account, transfer_account) VALUES ('{}', '{}', 1, {}, 0, '{}', 'None')".format(*session["transaction"]))
+    db.execute("INSERT INTO {} (description, category_id, operation, amount, lend_borrow, account, transfer_account) VALUES ('{}', '{}', 1, {}, 0, '{}', 'None')".format(*session["transaction"]))
 
     return redirect("/history")
     
