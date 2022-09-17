@@ -98,13 +98,13 @@ def regular():
     
     # Get account id.
     account_id = db.execute("SELECT id FROM ? WHERE account_name = ?", table_name[0], transaction[4])[0]["id"]
+    #return apology(str(account_id))
     
     # Update user's transaction history.
-    db.execute("INSERT INTO ? (description, category_id, amount, account1_id,\
-        account2_id) VALUES (?, ?, ?, ?, 'None')",\
-            transaction[0], transaction[1], operation["id"], account_id, 'None')
+    db.execute("INSERT INTO ? (description, category, amount, account_1, account_2)\
+        VALUES (?, ?, ?, ?, 'None')", transaction[0], transaction[1], transaction[2], transaction[3], transaction[4])
     
-    
+
     return redirect("/history")
     
     # Income/Expense.
@@ -397,12 +397,9 @@ def register():
             time TIMESTAMP DEFAULT (datetime('now', 'localtime')),\
             description TEXT,\
             amount REAL,\
-            category_id INTEGER,\
-            account1_id,\
-            account2_id,\
-            FOREIGN KEY(category_id) REFERENCES ?(id),\
-            FOREIGN KEY(account1_id) REFERENCES ?(id),\
-            FOREIGN KEY (account2_id) REFERENCES ?(id))", table_name[2], table_name[1], table_name[0], table_name[0])
+            category TEXT\
+            account_1 TEXT,\
+            account_2 TEXT)", table_name[2])
                 
         # Create user's debt and receivable tables.
         db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL)",  table_name[3])
