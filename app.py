@@ -90,16 +90,19 @@ def regular():
     transaction = session["transaction"]
     
     # Choose what operation to perform based on the category.
-    operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
+    operation = db.execute("SELECT category_operation, id FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]
     
     # Update user's selected account.
     db.execute("UPDATE ? SET account_balance = account_balance + ?\
-        WHERE account_name = ?", table_name[0], (operation * transaction[3]), transaction[4])
-        
+        WHERE account_name = ?", table_name[0], (operation["category_operation"] * transaction[3]), transaction[4])
+    
+    # Get account id.
+    account_id = db.execute("SELECT id FROM ? WHERE account_name = ?", table_name[0], transaction[4])[0]["id"]
+    
     # Update user's transaction history.
-    db.execute("INSERT INTO {} (description, category_name, amount, account,\
-        transfer_account) VALUES ('{}', '{}', {}, '{}', 'None')".format(*transaction))
-
+    db.execute("INSERT INTO ? (description, category_id, amount, account1_id,\
+        account2_id) VALUES (?, ?, ?, ?, 'None')",\
+            transaction[0], transaction[1], operation["id"], account_id, 'None')
     
     
     return redirect("/history")
