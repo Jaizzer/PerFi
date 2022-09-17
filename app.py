@@ -61,6 +61,7 @@ def index():
         # The user wants to create a new description.
         if session["transaction"][1] == "Create...":
             return apology("Create new description")
+        
         # Get the operation code.
         operation_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
         
