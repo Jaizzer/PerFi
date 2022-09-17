@@ -57,7 +57,10 @@ def index():
             request.form.get("amount", type=float), 
             request.form.get("account")
         ]
-                
+        
+        # The user wants to create a new description.
+        if session["transaction"][1] == "Create...":
+            return apology("Create new description")
         # Get the operation code.
         operation_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
         
@@ -71,9 +74,12 @@ def index():
         # Load all user's added  accounts.
         accounts = db.execute("SELECT account_name, account_balance FROM ?", table_name[0])
         
+        # Load all user's description.
+        descriptions = db.execute("SELECT description FROM ?", table_name[4])
+        
         # Load user's added categories.
         categories = db.execute("SELECT category_name FROM ?", table_name[1])
-        return render_template("home.html", accounts=accounts, categories=categories, username=table_name[2])
+        return render_template("home.html", accounts=accounts, categories=categories, username=table_name[2], descriptions=descriptions)
 
 
 @app.route("/regular")
@@ -332,8 +338,8 @@ def register():
             str(username + "_accounts"),
             str(username + "_categories"),
             username,
-            str(username + "_debt_receivable")
-        ]
+            str(username + "_debt_receivable"),
+            str(username + "_description")]
         # Store table names into a session.
         session["table_name"] = table_name
         
@@ -380,6 +386,12 @@ def register():
                 
         # Create user's debt and receivable tables.
         db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL)",  table_name[3])
+        
+        # Create user's default description.
+        db.execute("CREATE TABLE ? (id PRIMARY KEY, description TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
+        
+        # Insert "create description".
+        db.execute("INSERT INTO ? (description) VALUES ('Create...')", table_name[4])
                 
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")

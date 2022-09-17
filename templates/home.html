@@ -11,7 +11,12 @@
     <div align="center">
         <form action="/" method="post">
             <div style="float:center;" class="mb-3">
-                <input class="form-control mx-auto w-auto" id="description" name="description" placeholder="Description" type="text">
+                <select name="description">
+                    <option disabled selected>Description</option>
+                    {% for description in descriptions %}
+                        <option value="{{ description.description}}">{{ description.description }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div style="float:center;" class="mb-3">
                 <input class="form-control mx-auto w-auto" id="amount" name="amount" placeholder="Amount" type="number", min="1">
@@ -26,7 +31,7 @@
             </div>
             <div style="float:center;" class="mb-3">
                 <select name="category">
-                    <option disabled selected>Category</option>
+                    <option disabled selected>Transaction Type</option>
                     {% for category in categories %}
                         <option value="{{ category.category_name }}">{{ category.category_name }}</option>
                     {% endfor %}

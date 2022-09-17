@@ -84,3 +84,18 @@ if category is 2
     -add to account 2
 
 - Insert into transaction all the values.
+
+
+
+if more is selected redirect to a page that edits the category 
+(\edits\categories)
+
+    -render template of table with button beside that can remove or rename a category
+        - sqlite commands
+            -rename
+                - if account is renamed, previous transactions should also be renamed.
+            -delete
+                - if account is deleted, previous transaction should remain intact, but not in the future.
+    - there is also add button
+
+
