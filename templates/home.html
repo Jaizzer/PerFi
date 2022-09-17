@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Log In
+    Home
 {% endblock %}
 
 {% block main %}
@@ -9,6 +9,11 @@
         <h4>{{ username }}</h4>
     </div>
     <div align="center">
+        <form action="/edit" method="post">
+            <div>
+                <button style="float:center" class="btn btn-primary" href="/edit">Create Description</button>
+            </div>
+         </form>
         <form action="/" method="post">
             <div style="float:center;" class="mb-3">
                 <select name="description">

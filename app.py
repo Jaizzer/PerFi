@@ -55,13 +55,8 @@ def index():
             request.form.get("description"), 
             request.form.get("category"), 
             request.form.get("amount", type=float), 
-            request.form.get("account")
-        ]
-        
-        # The user wants to create a new description.
-        if session["transaction"][1] == "Create...":
-            return apology("Create new description")
-        
+            request.form.get("account")]
+                
         # Get the operation code.
         operation_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
         
@@ -76,7 +71,7 @@ def index():
         accounts = db.execute("SELECT account_name, account_balance FROM ?", table_name[0])
         
         # Load all user's description.
-        descriptions = db.execute("SELECT description FROM ?", table_name[4])
+        descriptions = db.execute("SELECT description FROM ? ORDER BY description", table_name[4])
         
         # Load user's added categories.
         categories = db.execute("SELECT category_name FROM ?", table_name[1])
@@ -161,6 +156,14 @@ def lend_borrow():
     else:
         people_entities =  db.execute("SELECT * FROM ?", table_name[3])
         return render_template("lend_borrow.html", category=session["transaction"][2], people_entities=people_entities)
+
+@app.route("/edit", methods=["GET", "POST"])
+@login_required
+def edit():
+    if request.method == "POST":
+        return apology("EDIT POST")
+    else:
+        return apology("EDIT GET")
 
 
 @app.route("/lend")
@@ -390,10 +393,7 @@ def register():
         
         # Create user's default description.
         db.execute("CREATE TABLE ? (id PRIMARY KEY, description TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
-        
-        # Insert "create description".
-        db.execute("INSERT INTO ? (description) VALUES ('Create...')", table_name[4])
-                
+                        
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
 
