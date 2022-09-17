@@ -11,26 +11,28 @@
     <table class="table">
         <thead>
             <tr>
-                <td>ID</td>
                 <td>Time</td>
                 <td>Description</td>
-                <td>Account</td>
                 <td>Category</td>
                 <td>Amount</td>
+                <td>Added/Deducted To</td>
                 <td>Account Transferred</td>
+                <td>Borrowed From</td>
+                <td>Lended To</td>
 
             </tr>
         </thead>
         <tbody>
             {% for transaction in transactions %}
                 <tr>
-                    <td>{{ transaction.id }}</td>
                     <td>{{ transaction.time }}</td>
                     <td>{{ transaction.description }}</td>
-                    <td>{{ transaction.account1 }}</td>
                     <td>{{ transaction.category }}</td>
-                    <td>{{ transaction.amount | usd }}</td>
-                    <td>{{ transaction.acount2 }}</td>
+                    <td>{{ transaction.amount }}</td>
+                    <td>{{ transaction.account_1 }}</td>
+                    <td>{{ transaction.account_2 }}</td>
+                    <td>{{ transaction.borrow }}</td>
+                    <td>{{ transaction.lend }}</td>
                 </tr>
             {% endfor %}
         </tbody>

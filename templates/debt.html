@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Debt
+    Debts
 {% endblock %}
 
 {% block main %}
-<h2>Debt</h2><hr>
+<h2>Debts</h2><hr>
 
 <div class="section">
     <table class="table">
@@ -19,7 +19,7 @@
             {% for debt in debts %}
                 <tr>
                     <td>{{ debt.name }}</td>
-                    <td>{{ debt.balance | usd }}</td>
+                    <td>{{ debt.balance }}</td>
                 </tr>
             {% endfor %}
         </tbody>

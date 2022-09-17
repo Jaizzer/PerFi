@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Lends
+{% endblock %}
+
+{% block main %}
+<h2>Lends</h2><hr>
+
+<div class="section">
+    <table class="table">
+        <thead>
+            <tr>
+                <td>Name</td>
+                <td>Amount</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lend in lends %}
+                <tr>
+                    <td>{{ lend.name }}</td>
+                    <td>{{ lend.balance }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

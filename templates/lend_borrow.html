@@ -6,25 +6,25 @@
 
 {% block main %}
     <div align="center">
-        <form action="/1_1" method="post">
+        <form action="/lend_borrow" method="post">
             <div style="float:center;" class="mb-3">
                 <input class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
             </div>
-            <button style="float:center" class="btn btn-primary" type="submit">Save</button>
+            <button style="float:center" class="btn btn-primary" type="submit">Proceed</button>
         </form>
     </div>
 
     <div align="center">
-        <form action="/1_1" method="post">
+        <form action="/lend_borrow" method="post">
             <div style="float:center;" class="mb-3">
                 <select name="name">
-                    <option disabled selected>Owed</option>
-                    {% for debt_receivable in debts_receivables %}
-                        <option value="{{ debt_receivable.name }}">{{ debt_receivable.name}}</option>
+                    <option disabled selected>Existing Names</option>
+                    {% for person_entity in people_entities %}
+                        <option value="{{ person_entity.name }}">{{ person_entity.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <button style="float:center" class="btn btn-primary" type="submit">Save</button>
+            <button style="float:center" class="btn btn-primary" type="submit">Proceed</button>
         </form>
     </div>
 
