@@ -20,6 +20,11 @@
                 <tr>
                     <td>{{ debt.name }}</td>
                     <td>{{ debt.balance }}</td>
+                    <form action="/pay_debt" method="post">
+                        <input type="hidden" id="to_pay" name="to_pay" value="{{ debt.name }}">
+                        <td><input class="form-control mx-auto w-auto" id="new_account" name="new_account" placeholder="Amount" type="number" min='1'>
+                        <button style="float:center" class="btn btn-primary" type="submit">Pay Debt</button></td>
+                    </form>
                 </tr>
             {% endfor %}
         </tbody>

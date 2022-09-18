@@ -9,7 +9,7 @@
         <h4>{{ username }}</h4>
     </div>
     <div align="center">
-        <form action="/edit" method="post">
+        <form action="/edit_description" method="get">
             <div>
                 <button style="float:center" class="btn btn-primary" href="/edit">Create Description</button>
             </div>
@@ -47,7 +47,7 @@
     </div>
 
     <div class="section">
-        <table class="table">
+        <table class="table table-bordered">
             <thead>
                 <tr>
                     <td>Account</td>
@@ -58,7 +58,7 @@
                 {% for account in accounts %}
                     <tr>
                         <td>{{ account.account_name }}</td>
-                        <td>{{ account.account_balance | usd }}</td>
+                        <td>{{ account.account_balance }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

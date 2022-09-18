@@ -157,13 +157,254 @@ def lend_borrow():
         people_entities =  db.execute("SELECT * FROM ?", table_name[3])
         return render_template("lend_borrow.html", category=session["transaction"][2], people_entities=people_entities)
 
+
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
 def edit():
+    
     if request.method == "POST":
-        return apology("EDIT POST")
+        
+        table_to_edit = request.form.get("table_to_edit")
+                        
+        return redirect(f"/edit_{table_to_edit}")
+        
     else:
-        return apology("EDIT GET")
+        
+        return render_template("edit.html")
+
+
+@app.route("/edit_description", methods=["GET", "POST"])
+@login_required
+def edit_description():
+            
+    # Load user's table name.
+    table_name = session["table_name"]    
+
+    if request.method == "POST":
+        
+        # Get the description to rename and save it into a session.
+        session["description_to_rename"] = request.form.get("description_to_edit")
+        
+        return redirect("/rename_description")
+    
+    else:
+        
+        # Load all user's description.
+        descriptions = db.execute("SELECT description FROM ?", table_name[4])
+        
+        return render_template("edit_description.html", descriptions=descriptions)
+
+
+@app.route("/rename_description", methods=["POST", "GET"])
+@login_required
+def rename_description():
+    
+    # Load all user's table name from a session.
+    table_name = session["table_name"]
+    
+    # Load the description to be renamed.
+    description_to_rename = session["description_to_rename"]
+    
+    if request.method == "POST":
+        
+        # Get the new name for the description.
+        new_description = request.form.get("new_description")
+        
+        # Udpate the entire database for description.
+        db.execute("UPDATE ? SET description = ? WHERE description = ?",  table_name[4], new_description, description_to_rename)
+        
+        # Update the previous transaction to the new description.
+        db.execute("UPDATE ? SET description = ? WHERE description = ?",  table_name[2], new_description, description_to_rename)
+
+        # Redirect back to the edit description route.
+        # Load all user's description.
+        descriptions = db.execute("SELECT description FROM ?", table_name[4])
+            
+        return render_template("edit_description.html", descriptions=descriptions)
+
+    else:
+        return render_template("rename_description.html", description_to_rename=description_to_rename)
+        
+        
+@app.route("/create_description", methods=["POST"])
+@login_required
+def create_description():
+    
+    if request.method == "POST":
+        
+        # Load user's table name.
+        table_name = session["table_name"]
+        
+        # Get the inputted description by the user.
+        new_description = request.form.get("created_description")
+        
+        # User input a description.
+        if new_description:
+            # Insert new description in the database if new.
+            if len(db.execute("SELECT description FROM ? WHERE description = ?", table_name[4], new_description)) == 0:
+                db.execute("INSERT INTO ? (description) VALUES (?)", table_name[4], new_description)
+            else:
+                return apology("Description already exists!")
+            
+        # User did not input a description, just reload the page.
+        else:
+            return redirect("/edit_description")
+        
+    # Redirect back to the edit description route.
+    # Load all user's description.
+    descriptions = db.execute("SELECT description FROM ?", table_name[4])
+            
+    return render_template("edit_description.html", descriptions=descriptions)
+
+    
+@app.route("/delete_description", methods=["POST"])
+@login_required
+def delete_description():
+    
+    # Load all user's table name from a session.
+    table_name = session["table_name"]
+    
+    if request.method == "POST":
+        # Remove the description selected by the user.
+        description_to_delete = request.form.get("description_to_delete")
+        
+        if description_to_delete:
+            db.execute("DELETE FROM ? WHERE description = ?", table_name[4], description_to_delete)
+
+    # Redirect back to the edit description route.
+    # Load all user's description.
+    descriptions = db.execute("SELECT description FROM ?", table_name[4])
+        
+    return render_template("edit_description.html", descriptions=descriptions)
+    
+    
+@app.route("/edit_account", methods=["GET", "POST"])
+@login_required
+def edit_account():
+            
+    # Load user's table name.
+    table_name = session["table_name"]    
+
+    if request.method == "POST":
+        
+        # Get the description to rename and save it into a session.
+        session["account_to_rename"] = request.form.get("account_to_edit")
+        
+        return redirect("/rename_account")
+    
+    else:
+        
+        # Load all user's description.
+        accounts = db.execute("SELECT account_name FROM ?", table_name[0])
+        
+        return render_template("edit_account.html", accounts=accounts)
+
+
+@app.route("/rename_account", methods=["POST", "GET"])
+@login_required
+def rename_account():
+    
+    # Load all user's table name from a session.
+    table_name = session["table_name"]
+    
+    # Load the description to be renamed.
+    account_to_rename = session["account_to_rename"]
+    
+    # Get account's current balance.
+    current_account_balance = db.execute("SELECT account_balance FROM ? WHERE account_name = ?", table_name[0], account_to_rename)[0]["account_balance"]
+        
+    if request.method == "POST":
+        
+        # Get the new name for the account.
+        new_account = request.form.get("new_account")
+        
+        # Get the new balance for the account.
+        new_balance = request.form.get("new_balance")
+            
+        # Update user's balance if the user changed the balance.
+        if new_balance:
+            db.execute("UPDATE ? SET account_balance = ? WHERE account_name = ?", table_name[0], new_balance, account_to_rename)
+
+        # Update the user's seelcted account.
+        if new_account:
+            # Udpate the entire database for account.
+            db.execute("UPDATE ? SET account_name = ? WHERE account_name = ?",  table_name[0], new_account, account_to_rename)
+                    
+            # Update the previous transaction to the new account.
+            db.execute("UPDATE ? SET account_1 = ? WHERE account_1 = ?",  table_name[2], new_account, account_to_rename)
+
+            
+        # Redirect back to the edit account route.
+        # Load all user's accounts..
+        accounts = db.execute("SELECT account_name FROM ?", table_name[0])
+                    
+        return render_template("edit_account.html", accounts=accounts)
+
+    else:
+        return render_template("rename_account.html", account_to_rename=account_to_rename, current_account_balance=current_account_balance)
+
+
+@app.route("/create_account", methods=["POST"])
+@login_required
+def create_account():
+    
+    if request.method == "POST":
+        
+        # Load user's table name.
+        table_name = session["table_name"]
+        
+        # Get the inputted description by the user.
+        new_account = request.form.get("created_account")
+        
+        # Proceed account creation if user input a new account.
+        if new_account:
+            
+            # Get the initial amount the user set.
+            initial_amount = request.form.get("initial_amount")
+            initial_amount = 0 if not initial_amount else int(initial_amount)
+            
+            # Insert new description in the database if new.
+            if len(db.execute("SELECT account_name FROM ? WHERE account_name = ?", table_name[0], new_account)) == 0:
+                db.execute("INSERT INTO ? (account_name, account_balance) VALUES (?, ?)", table_name[0], new_account, initial_amount)
+            else:
+                return apology("Account already exists!")
+        else:
+            return redirect("/edit_account")
+        
+    # Redirect back to the edit description route.
+    # Load all user's description.
+    accounts = db.execute("SELECT account_name FROM ? ORDER BY id ASC", table_name[0])
+            
+    return render_template("edit_account.html", accounts=accounts)
+
+
+@app.route("/delete_account", methods=["POST"])
+@login_required
+def delete_account():
+    
+    # Load all user's table name from a session.
+    table_name = session["table_name"]
+    
+    if request.method == "POST":
+        # Remove the description selected by the user.
+        account_to_delete = request.form.get("account_to_delete")
+        
+        if account_to_delete:
+            db.execute("DELETE FROM ? WHERE account_name = ?", table_name[0], account_to_delete)
+        
+    # Redirect back to the edit account route.
+    # Load all user's description.
+    accounts = db.execute("SELECT account_name FROM ?", table_name[0])
+    
+    return render_template("edit_account.html", accounts=accounts)
+    
+
+
+@app.route("/edit_debt_lend", methods=["GET", "POST"])
+@login_required
+def edit_debt_lend():
+            
+    return render_template("edit_debt_lend.html")
 
 
 @app.route("/lend")
@@ -235,6 +476,7 @@ def history():
 
     return render_template("history.html", transactions=transactions)
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -278,6 +520,7 @@ def logout():
 
     # Redirect user to login form
     return redirect("/login")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

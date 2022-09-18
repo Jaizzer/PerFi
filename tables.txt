@@ -34,11 +34,12 @@
             name TEXT, balance REAL))
         
         # table name
-        
+
         table_name = [
             str(username + "_accounts"),
             str(username + "_categories"),
             username,
             str(username + "_debt_receivable")
+            str(username + +_description")
         ]
 

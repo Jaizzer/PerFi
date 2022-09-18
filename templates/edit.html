@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Edit
+{% endblock %}
+
+{% block main %}
+<h2>Edit</h2><hr>
+
+<div class="section">
+    <form action="/edit" method="post">
+        <table class="table">
+            <tbody>
+                    <tr>
+                        <td>Descriptions</td>
+                        <input type="hidden" id="edit_descriptions" name="table_to_edit" value="description">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Edit</td>
+                    </tr>
+    </form>
+    <form action="/edit" method="post">
+                    <tr>
+                        <td>Accounts</td>
+                        <input type="hidden" id="edit_accounts" name="table_to_edit" value="account">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Edit</td>
+                    </tr>
+    </form>
+    <form action="/edit" method="post">
+                    <tr>
+                        <td>Debts</td>
+                        <input type="hidden" id="edit_debts" name="table_to_edit" value="debt">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Edit</td>
+                    </tr>
+    </form>
+    <form action="/edit" method="post">
+                    <tr>
+                        <td>Lends</td>
+                        <input type="hidden" id="edit_lends" name="table_to_edit" value="lend">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Edit</td>
+                    </tr>
+    </form>
+            
+    </tbody>
+    </table>
+</div>
+
+{% endblock %}

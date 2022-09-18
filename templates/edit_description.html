@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Edit Description
+{% endblock %}
+
+{% block main %}
+<h2>Edit Description</h2><hr>
+<form action="/create_description" method="post">
+    <input type="text" id="created_description" name="created_description" placeholder="New Description">
+    <button style="float:center" class="btn btn-primary" type="submit">Create</button>
+</form><hr>
+    <table class="table" name="description_to_edit">
+        <tbody>
+            {% for description in descriptions %}
+                <tr>
+                    <form action="/edit_description" method="post">
+                        <td>{{ description.description }}</td>
+                        <input type="hidden" id="edit_description" name="description_to_edit" value={{ description.description }}>
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Rename</button></td>
+                    </form>
+                    <form action="/delete_description" method="post">
+                        <input type="hidden" id="delete_description" name="description_to_delete" value={{ description.description }}>
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Delete</button></td>
+                    </form>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
