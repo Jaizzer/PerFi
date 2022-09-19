@@ -461,17 +461,20 @@ def edit_debt_lend():
 
     if request.method == "POST":
         
-        # Get the description to rename and save it into a session.
-        session["account_to_rename"] = request.form.get("account_to_edit")
+        # Get where the route originated.
+        session["origin"] = request.forn.get("origin")
         
-        return redirect("/rename_account")
+        # Get the description to rename and save it into a session.
+        session["person_to_rename"] = request.form.get("person_to_rename")
+        
+        return redirect("/edit_debt_receivable")
     
     else:
         
         # Load all user's description.
-        accounts = db.execute("SELECT account_name FROM ?", table_name[0])
+        debts_receivables = db.execute("SELECT name FROM ?", table_name[3])
         
-        return render_template("edit_account.html", accounts=accounts)
+        return render_template("edit_debt_receivable.html", debts_receivables=debts_receivables)
 
 
 @app.route("/lend")

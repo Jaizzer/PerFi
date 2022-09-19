@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Edit Debt/Receivable
+{% endblock %}
+
+{% block main %}
+<h2>Edit Debts/Receivables</h2><hr>
+<form action="/create_debt_receivable" method="post">
+    <input type="text" id="created_debt_receivable" name="created_debt_receivable" placeholder="New Debt/Receivable">
+    <input type="number" id="initial_amount" name="initial_amount" placeholder="Initial Amount">
+    <button style="float:center" class="btn btn-primary" type="submit">Create</button>
+</form><hr>
+
+    <table class="table" name="account_to_edit">
+        <tbody>
+            {% for account in accounts %}
+                <tr>
+                    <form action="/edit_account" method="post">
+                        <td>{{ account.account_name }}</td>
+                        <input type="hidden" id="edit_account" name="account_to_edit" value="{{ account.account_name }}">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Edit</button></td>
+                    </form>
+                    <form action="/delete_account" method="post">
+                        <input type="hidden" id="delete_account" name="account_to_delete" value="{{ account.account_name }}">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Delete</button></td>
+                    </form>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
