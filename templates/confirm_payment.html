@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    History
+{% endblock %}
+
+{% block main %}
+<hr>
+<h5>Transaction Summary</h5><hr>
+
+
+<div class="section">
+    <table class="table">
+        <thead>
+            <tr>
+                <td>Description</td>
+                <td>Category</td>
+                <td>Amount</td>
+                <td>Added/Deducted To</td>
+                <td>Transferred To</td>
+            </tr>
+        </thead>
+        <tbody>
+                <tr>
+                    {% for transaction in transactions %}
+                    <td>{{ transaction }}</td>
+                    {% endfor %}
+                </tr>
+        </tbody>
+    </table>
+
+<form action="/lend_borrow" method="post">
+        <button style="float:center" class="btn btn-primary" type="submit">Confirm</button>
+</form>
+
+</div>
+
+{% endblock %}

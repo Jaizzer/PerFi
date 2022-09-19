@@ -61,7 +61,7 @@ def index():
         operation_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
         
         # Choose route name base on operation code.
-        route_code = "regular" if operation_code == 0 else "lend_borrow"
+        route_code = "regular" if operation_code == 0 else "lend_borrow_prompt"
         
         # Redirect to the corresponding route.
         return redirect(f"/{route_code}")
@@ -120,15 +120,16 @@ def lend_borrow_prompt():
     # Load user's table's name from a session.
     table_name = session["table_name"]
     
+    # Get the names from the user's debt list.
     people_entities =  db.execute("SELECT * FROM ?", table_name[3])
+    
     return render_template("lend_borrow.html", category=session["transaction"][2], people_entities=people_entities)
 
 
-@app.route("/lend_borrow")
+@app.route("/lend_borrow", methods=["POST"])
 @login_required
 def lend_borrow():
     
-        
     # Load user's table's name from a session.
     table_name = session["table_name"]
 
@@ -447,9 +448,9 @@ def pay_debt_2():
     session["transaction"][3] = float(request.form.get("amount"))
     session["transaction"][4] = request.form.get("account")
     session["transaction"][5] = request.form.get("name")
-    
+        
     # process transaction in the "/regular" route.
-    return redirect("/lend_borrow")
+    return render_template("confirm_payment.html", transactions=session["transaction"][1:])
 
                  
 @app.route("/edit_debt_lend", methods=["GET", "POST"])
