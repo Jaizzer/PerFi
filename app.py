@@ -436,8 +436,7 @@ def pay_debt():
     # Redirect user to a form for debt payment processing.
     return render_template("pay_debt.html", name=name, amount=amount, accounts=accounts)
     
-
-
+    
 @app.route("/pay_debt_2", methods=["POST"])
 @login_required
 def pay_debt_2():
@@ -457,7 +456,22 @@ def pay_debt_2():
 @login_required
 def edit_debt_lend():
             
-    return render_template("edit_debt_lend.html")
+    # Load user's table name.
+    table_name = session["table_name"]    
+
+    if request.method == "POST":
+        
+        # Get the description to rename and save it into a session.
+        session["account_to_rename"] = request.form.get("account_to_edit")
+        
+        return redirect("/rename_account")
+    
+    else:
+        
+        # Load all user's description.
+        accounts = db.execute("SELECT account_name FROM ?", table_name[0])
+        
+        return render_template("edit_account.html", accounts=accounts)
 
 
 @app.route("/lend")
