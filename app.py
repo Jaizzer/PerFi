@@ -147,6 +147,7 @@ def lend_borrow():
         
         # Determine what column to use for a debt/lend transaction.
         lend_borrow = "lend" if transaction[3] < 0 else "borrow"
+        type = lend_borrow
             
         # Get the name where the user borrowed or lended money.
         name = request.form.get("name")
@@ -156,6 +157,7 @@ def lend_borrow():
             
         # Determine what column to use for a payment/collection transaction.
         lend_borrow = "account_2"
+        type = "borrow" # create a request.form so that lend and borrow will be dynamic
             
         # Get the name of the person/entity the user is going to pay/collect money.
         name = transaction[5]
@@ -165,10 +167,10 @@ def lend_borrow():
         WHERE account_name = ?", table_name[0], transaction[3], transaction[4])
     
     # Update user's lend/borrow database.
-    if len(db.execute("SELECT name FROM ? WHERE (name = ? and type = ?)", table_name[3], name, lend_borrow)) == 0: # Check if the person/entity exists in user's database.
-        db.execute("INSERT INTO ? (name, balance, type, synched) VALUES (?, ?, ?, 0)", table_name[3], name, transaction[3], lend_borrow)
+    if len(db.execute("SELECT name FROM ? WHERE (name = ? AND type = ? OR type = 'synched')", table_name[3], name, type)) == 0: # Check if the person/entity exists in user's database.
+        db.execute("INSERT INTO ? (name, balance, type) VALUES (?, ?, ?)", table_name[3], name, transaction[3], type)
     else:
-        db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ?) ",  table_name[3], transaction[3], name, lend_borrow)
+        db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ? OR type = 'synched') ",  table_name[3], transaction[3], name, type)
 
     # Update user's transaction history.
     db.execute("INSERT INTO {} (description, category, amount, account_1, '{}')\
@@ -703,7 +705,7 @@ def register():
             borrow TEXT)", table_name[2])
                 
         # Create user's debt and receivable tables.
-        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL, type TEXT, synched INTEGER)",  table_name[3])
+        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL, type TEXT)",  table_name[3])
         
         # Create user's default description.
         db.execute("CREATE TABLE ? (id PRIMARY KEY, description TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
