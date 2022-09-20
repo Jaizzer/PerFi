@@ -132,13 +132,7 @@ def lend_borrow():
     
     # Load user's table's name from a session.
     table_name = session["table_name"]
-
-    # Choose what operation to perform based on the category.
-    operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
         
-    # Change the sign of the amound base on the operation.
-    session["transaction"][3] = operation * session["transaction"][3]
-
     # Load user's current transaction information from a session.
     transaction = session["transaction"]
 
@@ -157,11 +151,20 @@ def lend_borrow():
             
         # Determine what column to use for a payment/collection transaction.
         lend_borrow = "account_2"
-        type = "borrow" # create a request.form so that lend and borrow will be dynamic
+        
+        # Get the type depending if the confirmation page was for payment or collection.
+        confirmation_type = request.form.get("pay_collect")
+        type = "borrow" if confirmation_type == "Paid to" else "lend"
             
         # Get the name of the person/entity the user is going to pay/collect money.
         name = transaction[5]
-            
+    
+    # Choose what operation to perform based on the category.
+    operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
+
+    # Change the sign of the amound base on the operation.
+    transaction[3] = operation * transaction[3]
+
     # Update user's selected account.
     db.execute("UPDATE ? SET account_balance = account_balance + ?\
         WHERE account_name = ?", table_name[0], transaction[3], transaction[4])
@@ -421,9 +424,9 @@ def delete_account():
     return render_template("edit_account.html", accounts=accounts)
     
 
-@app.route("/pay_debt", methods=["POST"])
+@app.route("/pay_collect", methods=["POST"])
 @login_required
-def pay_debt():
+def pay_collect():
      
     # Load user's table names.
     table_name = session["table_name"] 
@@ -431,27 +434,54 @@ def pay_debt():
     # Get the name the user is indebted to and the amount.
     name = request.form.get("name")
     amount = request.form.get("amount")
-
+    pay_collect = request.form.get("pay_collect")
+        
+    # Determine caption for the html.
+    if pay_collect == "Payment to":
+        caption = "Borrowed Money"
+        block_title = "Pay Debt"
+    else:
+        caption = "Lended Money"
+        block_title = "Collect Lend"
+    
     # Load all user's added  accounts.
     accounts = db.execute("SELECT account_name, account_balance FROM ?", table_name[0])
         
     # Redirect user to a form for debt payment processing.
-    return render_template("pay_debt.html", name=name, amount=amount, accounts=accounts)
+    return render_template("pay_collect.html", name=name, amount=amount, accounts=accounts,\
+        pay_collect=pay_collect, caption=caption, block_title=block_title)
     
     
-@app.route("/pay_debt_2", methods=["POST"])
+@app.route("/pay_collect_2", methods=["POST"])
 @login_required
 def pay_debt_2():
                 
+    # Load description prefix.
+    pay_collect = request.form.get("pay_collect")
+    
+    # Determine type of transaction
+    payment_collection = "Debt Payment" if pay_collect == "Payment to" else "Lend Collection"
+        
     # Update the transaction in the session for processing.
-    session["transaction"][1] = "Payment to " + request.form.get("name")
-    session["transaction"][2] = "Debt Payment"
+    session["transaction"][1] = str(pay_collect) + " " + request.form.get("name")
+    session["transaction"][2] = payment_collection
     session["transaction"][3] = float(request.form.get("amount"))
     session["transaction"][4] = request.form.get("account")
     session["transaction"][5] = request.form.get("name")
         
+    # Determine column title for the confirmation page.
+    column_4 = "None"
+    column_5 = "None"
+    
+    if pay_collect == "Payment to":
+        column_4 = "Deducted To "
+        column_5 = "Paid to"
+    else:
+        column_4 = "Added to "
+        column_5 = "Collected from"
+       
     # process transaction in the "/regular" route.
-    return render_template("confirm_payment.html", transactions=session["transaction"][1:])
+    return render_template("confirm_payment.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5)
 
                  
 @app.route("/edit_debt_lend", methods=["GET", "POST"])

@@ -16,8 +16,8 @@
                 <td>Description</td>
                 <td>Category</td>
                 <td>Amount</td>
-                <td>Added/Deducted To</td>
-                <td>Transferred To</td>
+                <td>{{ column_4  }}</td>
+                <td>{{ column_5 }}</td>
             </tr>
         </thead>
         <tbody>
@@ -30,6 +30,7 @@
     </table>
 
 <form action="/lend_borrow" method="post">
+        <input type="hidden" id="pay_collect" name="pay_collect" value="{{ column_5 }}">
         <button style="float:center" class="btn btn-primary" type="submit">Confirm</button>
 </form>
 

@@ -20,6 +20,12 @@
                 <tr>
                     <td>{{ lend.name }}</td>
                     <td>{{ lend.balance }}</td>
+                    <form action="/pay_collect" method="post">
+                        <input type="hidden" id="name" name="name" value="{{ lend.name }}">
+                        <input type="hidden" id="amount" name="amount" value="{{ lend.balance }}">
+                        <input type="hidden" id="collect" name="pay_collect" value="Collection from">
+                        <td><button style="float:center" class="btn btn-primary" type="submit">Collect</button></td>
+                    </form>
                 </tr>
             {% endfor %}
         </tbody>

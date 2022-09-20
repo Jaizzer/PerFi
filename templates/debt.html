@@ -20,9 +20,10 @@
                 <tr>
                     <td>{{ debt.name }}</td>
                     <td>{{ debt.balance }}</td>
-                    <form action="/pay_debt" method="post">
+                    <form action="/pay_collect" method="post">
                         <input type="hidden" id="name" name="name" value="{{ debt.name }}">
                         <input type="hidden" id="amount" name="amount" value="{{ debt.balance }}">
+                        <input type="hidden" id="pay" name="pay_collect" value="Payment to">
                         <td><button style="float:center" class="btn btn-primary" type="submit">Pay</button></td>
                     </form>
                 </tr>
