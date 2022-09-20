@@ -163,12 +163,12 @@ def lend_borrow():
     # Update user's selected account.
     db.execute("UPDATE ? SET account_balance = account_balance + ?\
         WHERE account_name = ?", table_name[0], transaction[3], transaction[4])
-                
+    
     # Update user's lend/borrow database.
-    if len(db.execute("SELECT name FROM ? WHERE name = ?", table_name[3], name)) == 0: # Check if the person/entity exists in user's database.
-        db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[3], name, transaction[3])
+    if len(db.execute("SELECT name FROM ? WHERE (name = ? and type = ?)", table_name[3], name, lend_borrow)) == 0: # Check if the person/entity exists in user's database.
+        db.execute("INSERT INTO ? (name, balance, type, synched) VALUES (?, ?, ?, 0)", table_name[3], name, transaction[3], lend_borrow)
     else:
-        db.execute("UPDATE ? SET balance = balance + ? WHERE name = ?",  table_name[3], transaction[3], name)
+        db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ?) ",  table_name[3], transaction[3], name, lend_borrow)
 
     # Update user's transaction history.
     db.execute("INSERT INTO {} (description, category, amount, account_1, '{}')\
@@ -703,7 +703,7 @@ def register():
             borrow TEXT)", table_name[2])
                 
         # Create user's debt and receivable tables.
-        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL)",  table_name[3])
+        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL, type TEXT, synched INTEGER)",  table_name[3])
         
         # Create user's default description.
         db.execute("CREATE TABLE ? (id PRIMARY KEY, description TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
