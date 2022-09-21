@@ -122,7 +122,7 @@ def lend_borrow_prompt():
     table_name = session["table_name"]
     
     # Filter the names to show bas on debt and lend distinction.
-    entity_type ="borrow" if session["transaction"][2] == "Debt" else "lend"
+    entity_type = "borrow" if session["transaction"][2] == "Debt" else "lend"
         
     # Filter the entities to show for lend and borrow using the type of transaction.
     people_entities =  db.execute("SELECT * FROM ? WHERE (type = ? OR type = 'synched')", table_name[3], entity_type)
