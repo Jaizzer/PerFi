@@ -15,11 +15,8 @@
                 <td>Description</td>
                 <td>Category</td>
                 <td>Amount</td>
-                <td>Account Used</td>
-                <td>Transferred To</td>
-                <td>Borrowed From</td>
-                <td>Lended To</td>
-
+                <td>From</td>
+                <td>To</td>
             </tr>
         </thead>
         <tbody>
@@ -31,8 +28,6 @@
                     <td>{{ transaction.amount }}</td>
                     <td>{{ transaction.account_1 }}</td>
                     <td>{{ transaction.account_2 }}</td>
-                    <td>{{ transaction.borrow }}</td>
-                    <td>{{ transaction.lend }}</td>
                 </tr>
             {% endfor %}
         </tbody>

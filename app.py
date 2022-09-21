@@ -55,7 +55,8 @@ def index():
             request.form.get("description"), 
             request.form.get("category"), 
             request.form.get("amount", type=float), 
-            request.form.get("account"), 'None']
+            request.form.get("account"), 
+            request.form.get("description")]
                 
         # Get the operation code.
         operation_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
@@ -120,8 +121,11 @@ def lend_borrow_prompt():
     # Load user's table's name from a session.
     table_name = session["table_name"]
     
-    # Get the names from the user's debt list.
-    people_entities =  db.execute("SELECT * FROM ?", table_name[3])
+    # Filter the names to show bas on debt and lend distinction.
+    entity_type ="borrow" if session["transaction"][2] == "Debt" else "lend"
+        
+    # Filter the entities to show for lend and borrow using the type of transaction.
+    people_entities =  db.execute("SELECT * FROM ? WHERE (type = ? OR type = 'synched')", table_name[3], entity_type)
     
     return render_template("lend_borrow.html", category=session["transaction"][2], people_entities=people_entities)
 
@@ -139,13 +143,18 @@ def lend_borrow():
     # Transaction is lend/borrow.
     if transaction[2] in {"Debt", "Lend"}:
         
-        # Determine what column to use for a debt/lend transaction.
-        lend_borrow = "lend" if transaction[3] < 0 else "borrow"
-        type = lend_borrow
-            
         # Get the name where the user borrowed or lended money.
         name = request.form.get("name")
-
+                        
+        # Determine whether it is a lend or a borrow.
+        if transaction[2] == "Lend":
+            lend_borrow = "lend"
+        else:
+            lend_borrow = "borrow"
+                    
+        # Characterize the type of the transaction.
+        type = lend_borrow
+            
     # Transaction is payment/collection.
     else:
             
@@ -158,6 +167,9 @@ def lend_borrow():
             
         # Get the name of the person/entity the user is going to pay/collect money.
         name = transaction[5]
+        
+    # Update the transaction[5]
+    transaction[5] = name
     
     # Choose what operation to perform based on the category.
     operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
@@ -175,9 +187,17 @@ def lend_borrow():
     else:
         db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ? OR type = 'synched') ",  table_name[3], transaction[3], name, type)
 
+    # If the transaction is borrow.
+    if type == "borrow" and lend_borrow == "borrow":
+            
+        # Swap the "from-account" and "to-account"
+        temp = transaction[5]
+        transaction[5] = transaction[4]
+        transaction[4] = temp
+
     # Update user's transaction history.
-    db.execute("INSERT INTO {} (description, category, amount, account_1, '{}')\
-            VALUES ('{}', '{}', {}, '{}', '{}')".format(transaction[0], lend_borrow, *transaction[1:-1], name))
+    db.execute("INSERT INTO {} (description, category, amount, account_1, account_2)\
+            VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction))
         
     # Redirect user to history.  
     return redirect(f"/history")
