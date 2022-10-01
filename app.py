@@ -58,24 +58,25 @@ def index():
             request.form.get("account"), 
             request.form.get("description")]
                 
-        # Get the operation code.
-        operation_code = db.execute("SELECT lend_borrow FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["lend_borrow"]
+        # Classify  transaction whether it's regular or involves lend/borrow.
+        transaction_classifier = db.execute("SELECT lend_or_borrow FROM ? WHERE name = ?", table_name[1], session["transaction"][2])[0]["lend_or_borrow"]
         
-        # Choose route name base on operation code.
-        route_code = "regular" if operation_code == 0 else "lend_borrow_prompt"
+        # Redirect user to the corresponding route.
+        route_name = "regular" if transaction_classifier == 0 else "lend_or_borrow"
         
         # Redirect to the corresponding route.
-        return redirect(f"/{route_code}")
+        return redirect(f"/{route_name}")
                  
     else:
-        # Load all user's added  accounts.
-        accounts = db.execute("SELECT account_name, account_balance FROM ?", table_name[0])
         
-        # Load all user's description.
-        descriptions = db.execute("SELECT description FROM ? ORDER BY description", table_name[4])
+        # Load all user's accounts.
+        accounts = db.execute("SELECT name, balance FROM ?", table_name[0])
         
-        # Load user's added categories.
-        categories = db.execute("SELECT category_name FROM ? WHERE (category_name != 'Debt Payment' AND category_name != 'Lend Collection')", table_name[1])
+        # Load all user's descriptions.
+        descriptions = db.execute("SELECT name FROM ? ORDER BY name", table_name[4])
+        
+        # Load transaction categories excluding 'Debt Payment' and 'Lend Collection'.
+        categories = db.execute("SELECT name FROM ? WHERE (name != 'Debt Payment' AND name != 'Lend Collection')", table_name[1])
                         
         return render_template("home.html", accounts=accounts, categories=categories, username=table_name[2], descriptions=descriptions)
 
@@ -87,473 +88,40 @@ def regular():
     # Load user's table's name from a session.
     table_name = session["table_name"]
 
-    # Choose what operation to perform based on the category.
-    operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
+    # Determine whether to use addition or subtraction.
+    operation = db.execute("SELECT operation FROM ? WHERE name = ?", table_name[1], session["transaction"][2])[0]["operation"]
     
-    # Change the sign of the amound base on the operation.
+    # Make the amount positive (Income) or negative (Expense).
     session["transaction"][3] = operation * session["transaction"][3]
 
     # Load user's current transaction information from a session.
     transaction = session["transaction"]
 
-    # Operation does not involve transfers.
-    if operation != 0:        
-        # Update user's selected account.
-        db.execute("UPDATE ? SET account_balance = account_balance + ?\
-            WHERE account_name = ?", table_name[0], transaction[3], transaction[4])
-            
-    # Operation involved transfers.
+    # The category is transfer.
+    if operation == 0:
+    
+        # Redirect user to transfer route.
+        return redirect("/transfer")
+
+    # The category is either "Income" or "Expense".
     else:
         
-        return redirect("/transfer")
-         
+        # Swap receiver (user's account) and sender (description) if transaction type is "Expense."
+        if transaction[3] < 0:
+                        
+            temp = transaction[5]
+            transaction[5] = transaction[4]
+            transaction[4] = temp
+        
+        # Update user's selected account.
+        db.execute("UPDATE ? SET balance = balance + ?\
+            WHERE name = ?", table_name[0], transaction[3], transaction[4])
+                
     # Update user's transaction history.
-    db.execute("INSERT INTO {} (description, category, amount, account_1, account_2)\
+    db.execute("INSERT INTO {} (description, category, amount, receiver, sender)\
             VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction))
 
     return redirect("/history")
-
-
-@app.route("/lend_borrow_prompt")
-@login_required
-def lend_borrow_prompt():
-    
-    # Load user's table's name from a session.
-    table_name = session["table_name"]
-    
-    # Filter the names to show bas on debt and lend distinction.
-    entity_type = "borrow" if session["transaction"][2] == "Debt" else "lend"
-        
-    # Filter the entities to show for lend and borrow using the type of transaction.
-    people_entities =  db.execute("SELECT * FROM ? WHERE (type = ? OR type = 'synched')", table_name[3], entity_type)
-    
-    return render_template("lend_borrow.html", category=session["transaction"][2], people_entities=people_entities)
-
-
-@app.route("/lend_borrow", methods=["POST"])
-@login_required
-def lend_borrow():
-    
-    # Load user's table's name from a session.
-    table_name = session["table_name"]
-        
-    # Load user's current transaction information from a session.
-    transaction = session["transaction"]
-
-    # Transaction is lend/borrow.
-    if transaction[2] in {"Debt", "Lend"}:
-        
-        # Get the name where the user borrowed or lended money.
-        name = request.form.get("name")
-                        
-        # Determine whether it is a lend or a borrow.
-        if transaction[2] == "Lend":
-            lend_borrow = "lend"
-        else:
-            lend_borrow = "borrow"
-                    
-        # Characterize the type of the transaction.
-        type = lend_borrow
-            
-    # Transaction is payment/collection.
-    else:
-            
-        # Determine what column to use for a payment/collection transaction.
-        lend_borrow = "account_2"
-        
-        # Get the type depending if the confirmation page was for payment or collection.
-        confirmation_type = request.form.get("pay_collect")
-        type = "borrow" if confirmation_type == "Paid to" else "lend"
-            
-        # Get the name of the person/entity the user is going to pay/collect money.
-        name = transaction[5]
-        
-    # Update the transaction[5]
-    transaction[5] = name
-    
-    # Choose what operation to perform based on the category.
-    operation = db.execute("SELECT category_operation FROM ? WHERE category_name = ?", table_name[1], session["transaction"][2])[0]["category_operation"]
-
-    # Change the sign of the amound base on the operation.
-    transaction[3] = operation * transaction[3]
-
-    # Update user's selected account.
-    db.execute("UPDATE ? SET account_balance = account_balance + ?\
-        WHERE account_name = ?", table_name[0], transaction[3], transaction[4])
-    
-    # Update user's lend/borrow database.
-    if len(db.execute("SELECT name FROM ? WHERE (name = ? AND type = ? OR type = 'synched')", table_name[3], name, type)) == 0: # Check if the person/entity exists in user's database.
-        db.execute("INSERT INTO ? (name, balance, type) VALUES (?, ?, ?)", table_name[3], name, transaction[3], type)
-    else:
-        db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ? OR type = 'synched') ",  table_name[3], transaction[3], name, type)
-
-    # If the transaction is borrow.
-    if type == "borrow" and lend_borrow == "borrow":
-            
-        # Swap the "from-account" and "to-account"
-        temp = transaction[5]
-        transaction[5] = transaction[4]
-        transaction[4] = temp
-
-    # Update user's transaction history.
-    db.execute("INSERT INTO {} (description, category, amount, account_1, account_2)\
-            VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction))
-        
-    # Redirect user to history.  
-    return redirect(f"/history")
-        
-
-@app.route("/edit", methods=["GET", "POST"])
-@login_required
-def edit():
-    
-    if request.method == "POST":
-        
-        table_to_edit = request.form.get("table_to_edit")
-                        
-        return redirect(f"/edit_{table_to_edit}")
-        
-    else:
-        
-        return render_template("edit.html")
-
-
-@app.route("/edit_description", methods=["GET", "POST"])
-@login_required
-def edit_description():
-            
-    # Load user's table name.
-    table_name = session["table_name"]    
-
-    if request.method == "POST":
-        
-        # Get the description to rename and save it into a session.
-        session["description_to_rename"] = request.form.get("description_to_edit")
-        
-        return redirect("/rename_description")
-    
-    else:
-        
-        # Load all user's description.
-        descriptions = db.execute("SELECT description FROM ?", table_name[4])
-        
-        return render_template("edit_description.html", descriptions=descriptions)
-
-
-@app.route("/rename_description", methods=["POST", "GET"])
-@login_required
-def rename_description():
-    
-    # Load all user's table name from a session.
-    table_name = session["table_name"]
-    
-    # Load the description to be renamed.
-    description_to_rename = session["description_to_rename"]
-    
-    if request.method == "POST":
-        
-        # Get the new name for the description.
-        new_description = request.form.get("new_description")
-        
-        # Udpate the entire database for description.
-        db.execute("UPDATE ? SET description = ? WHERE description = ?",  table_name[4], new_description, description_to_rename)
-        
-        # Update the previous transaction to the new description.
-        db.execute("UPDATE ? SET description = ? WHERE description = ?",  table_name[2], new_description, description_to_rename)
-
-        # Redirect back to the edit description route.
-        # Load all user's description.
-        descriptions = db.execute("SELECT description FROM ?", table_name[4])
-            
-        return render_template("edit_description.html", descriptions=descriptions)
-
-    else:
-        return render_template("rename_description.html", description_to_rename=description_to_rename)
-        
-        
-@app.route("/create_description", methods=["POST"])
-@login_required
-def create_description():
-    
-    if request.method == "POST":
-        
-        # Load user's table name.
-        table_name = session["table_name"]
-        
-        # Get the inputted description by the user.
-        new_description = request.form.get("created_description")
-        
-        # User input a description.
-        if new_description:
-            # Insert new description in the database if new.
-            if len(db.execute("SELECT description FROM ? WHERE description = ?", table_name[4], new_description)) == 0:
-                db.execute("INSERT INTO ? (description) VALUES (?)", table_name[4], new_description)
-            else:
-                return apology("Description already exists!")
-            
-        # User did not input a description, just reload the page.
-        else:
-            return redirect("/edit_description")
-        
-    # Redirect back to the edit description route.
-    # Load all user's description.
-    descriptions = db.execute("SELECT description FROM ?", table_name[4])
-            
-    return render_template("edit_description.html", descriptions=descriptions)
-
-    
-@app.route("/delete_description", methods=["POST"])
-@login_required
-def delete_description():
-    
-    # Load all user's table name from a session.
-    table_name = session["table_name"]
-    
-    if request.method == "POST":
-        # Remove the description selected by the user.
-        description_to_delete = request.form.get("description_to_delete")
-        
-        if description_to_delete:
-            db.execute("DELETE FROM ? WHERE description = ?", table_name[4], description_to_delete)
-
-    # Redirect back to the edit description route.
-    # Load all user's description.
-    descriptions = db.execute("SELECT description FROM ?", table_name[4])
-        
-    return render_template("edit_description.html", descriptions=descriptions)
-    
-    
-@app.route("/edit_account", methods=["GET", "POST"])
-@login_required
-def edit_account():
-            
-    # Load user's table name.
-    table_name = session["table_name"]    
-
-    if request.method == "POST":
-        
-        # Get the description to rename and save it into a session.
-        session["account_to_rename"] = request.form.get("account_to_edit")
-        
-        return redirect("/rename_account")
-    
-    else:
-        
-        # Load all user's description.
-        accounts = db.execute("SELECT account_name FROM ?", table_name[0])
-        
-        return render_template("edit_account.html", accounts=accounts)
-
-
-@app.route("/rename_account", methods=["POST", "GET"])
-@login_required
-def rename_account():
-    
-    # Load all user's table name from a session.
-    table_name = session["table_name"]
-    
-    # Load the description to be renamed.
-    account_to_rename = session["account_to_rename"]
-    
-    # Get account's current balance.
-    current_account_balance = db.execute("SELECT account_balance FROM ? WHERE account_name = ?", table_name[0], account_to_rename)[0]["account_balance"]
-        
-    if request.method == "POST":
-        
-        # Get the new name for the account.
-        new_account = request.form.get("new_account")
-        
-        # Get the new balance for the account.
-        new_balance = request.form.get("new_balance")
-            
-        # Update user's balance if the user changed the balance.
-        if new_balance:
-            db.execute("UPDATE ? SET account_balance = ? WHERE account_name = ?", table_name[0], new_balance, account_to_rename)
-
-        # Update the user's seelcted account.
-        if new_account:
-            # Udpate the entire database for account.
-            db.execute("UPDATE ? SET account_name = ? WHERE account_name = ?",  table_name[0], new_account, account_to_rename)
-                    
-            # Update the previous transaction to the new account.
-            db.execute("UPDATE ? SET account_1 = ? WHERE account_1 = ?",  table_name[2], new_account, account_to_rename)
-
-            
-        # Redirect back to the edit account route.
-        # Load all user's accounts..
-        accounts = db.execute("SELECT account_name FROM ?", table_name[0])
-                    
-        return render_template("edit_account.html", accounts=accounts)
-
-    else:
-        return render_template("rename_account.html", account_to_rename=account_to_rename, current_account_balance=current_account_balance)
-
-
-@app.route("/create_account", methods=["POST"])
-@login_required
-def create_account():
-    
-    if request.method == "POST":
-        
-        # Load user's table name.
-        table_name = session["table_name"]
-        
-        # Get the inputted description by the user.
-        new_account = request.form.get("created_account")
-        
-        # Proceed account creation if user input a new account.
-        if new_account:
-            
-            # Get the initial amount the user set.
-            initial_amount = request.form.get("initial_amount")
-            initial_amount = 0 if not initial_amount else int(initial_amount)
-            
-            # Insert new description in the database if new.
-            if len(db.execute("SELECT account_name FROM ? WHERE account_name = ?", table_name[0], new_account)) == 0:
-                db.execute("INSERT INTO ? (account_name, account_balance) VALUES (?, ?)", table_name[0], new_account, initial_amount)
-            else:
-                return apology("Account already exists!")
-        else:
-            return redirect("/edit_account")
-        
-    # Redirect back to the edit description route.
-    # Load all user's description.
-    accounts = db.execute("SELECT account_name FROM ? ORDER BY id ASC", table_name[0])
-            
-    return render_template("edit_account.html", accounts=accounts)
-
-
-@app.route("/delete_account", methods=["POST"])
-@login_required
-def delete_account():
-    
-    # Load all user's table name from a session.
-    table_name = session["table_name"]
-    
-    if request.method == "POST":
-        # Remove the description selected by the user.
-        account_to_delete = request.form.get("account_to_delete")
-        
-        if account_to_delete:
-            db.execute("DELETE FROM ? WHERE account_name = ?", table_name[0], account_to_delete)
-        
-    # Redirect back to the edit account route.
-    # Load all user's description.
-    accounts = db.execute("SELECT account_name FROM ?", table_name[0])
-    
-    return render_template("edit_account.html", accounts=accounts)
-    
-
-@app.route("/pay_collect", methods=["POST"])
-@login_required
-def pay_collect():
-     
-    # Load user's table names.
-    table_name = session["table_name"] 
-             
-    # Get the name the user is indebted to and the amount.
-    name = request.form.get("name")
-    amount = request.form.get("amount")
-    pay_collect = request.form.get("pay_collect")
-        
-    # Determine caption for the html.
-    if pay_collect == "Payment to":
-        caption = "Borrowed Money"
-        block_title = "Pay Debt"
-    else:
-        caption = "Lended Money"
-        block_title = "Collect Lend"
-    
-    # Load all user's added  accounts.
-    accounts = db.execute("SELECT account_name, account_balance FROM ?", table_name[0])
-        
-    # Redirect user to a form for debt payment processing.
-    return render_template("pay_collect.html", name=name, amount=amount, accounts=accounts,\
-        pay_collect=pay_collect, caption=caption, block_title=block_title)
-    
-    
-@app.route("/pay_collect_2", methods=["POST"])
-@login_required
-def pay_debt_2():
-                
-    # Load description prefix.
-    pay_collect = request.form.get("pay_collect")
-    
-    # Determine type of transaction
-    payment_collection = "Debt Payment" if pay_collect == "Payment to" else "Lend Collection"
-        
-    # Update the transaction in the session for processing.
-    session["transaction"][1] = str(pay_collect) + " " + request.form.get("name")
-    session["transaction"][2] = payment_collection
-    session["transaction"][3] = float(request.form.get("amount"))
-    session["transaction"][4] = request.form.get("account")
-    session["transaction"][5] = request.form.get("name")
-        
-    # Determine column title for the confirmation page.
-    column_4 = "None"
-    column_5 = "None"
-    
-    if pay_collect == "Payment to":
-        column_4 = "Deducted To "
-        column_5 = "Paid to"
-    else:
-        column_4 = "Added to "
-        column_5 = "Collected from"
-       
-    # process transaction in the "/regular" route.
-    return render_template("confirm_payment.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5)
-
-                 
-@app.route("/edit_debt_lend", methods=["GET", "POST"])
-@login_required
-def edit_debt_lend():
-            
-    # Load user's table name.
-    table_name = session["table_name"]    
-
-    if request.method == "POST":
-        
-        # Get where the route originated.
-        session["origin"] = request.forn.get("origin")
-        
-        # Get the description to rename and save it into a session.
-        session["person_to_rename"] = request.form.get("person_to_rename")
-        
-        return redirect("/edit_debt_receivable")
-    
-    else:
-        
-        # Load all user's description.
-        debts_receivables = db.execute("SELECT name FROM ?", table_name[3])
-        
-        return render_template("edit_debt_receivable.html", debts_receivables=debts_receivables)
-
-
-@app.route("/lend")
-@login_required
-def lend():
-    """Show user's lend list."""
-    
-    # Load user's table's names.
-    table_name = session["table_name"]
-    
-    # Load all the entities the user lend money to.
-    lends = db.execute("SELECT name, ABS(balance) as balance FROM ? WHERE balance < 0", table_name[3])
-
-    return render_template("lend.html", lends=lends)
-
-    
-@app.route("/borrow")
-@login_required
-def borrow():
-
-    # Load user's table's names.
-    table_name = session["table_name"]
-    
-    # Load all the entities where the user borrowed money.
-    debts = db.execute("SELECT name, ABS(balance) as balance FROM ? WHERE balance > 0", table_name[3])
-
-    return render_template("debt.html", debts=debts)
 
 
 @app.route("/transfer", methods=["GET", "POST"])
@@ -571,13 +139,13 @@ def transfer():
         account_to_transfer = request.form.get("account_to_transfer")
                 
         # Update user's selected account.
-        db.execute("UPDATE '{}' SET account_balance = account_balance - {} WHERE account_name = '{}'".format(table_name[0], *transaction[3:]))
+        db.execute("UPDATE '{}' SET balance = balance - {} WHERE name = '{}'".format(table_name[0], *transaction[3:]))
         
         # Update user's selected account.
-        db.execute("UPDATE '{}' SET account_balance = account_balance + {} WHERE account_name = '{}'".format(table_name[0], transaction[3], account_to_transfer))
+        db.execute("UPDATE '{}' SET balance = balance + {} WHERE name = '{}'".format(table_name[0], transaction[3], account_to_transfer))
     
         # Update user's transaction history.
-        db.execute("INSERT INTO {} (description, category, amount, account_1, account_2)\
+        db.execute("INSERT INTO {} (description, category, amount, receiver, sender)\
                 VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction, account_to_transfer))
 
         return redirect("/history")
@@ -585,9 +153,493 @@ def transfer():
     else:
         
         # Load all user's added  accounts.
-        accounts = db.execute("SELECT * FROM ? WHERE account_name != ?", table_name[0], transaction[4])
+        accounts = db.execute("SELECT * FROM ? WHERE name != ?", table_name[0], transaction[4])
 
         return render_template("transfer.html", accounts=accounts, category=transaction[2])
+
+
+@app.route("/lend_or_borrow", methods=["GET", "POST"])
+@login_required
+def lend_or_borrow():
+    
+    # Load user's table's name from a session.
+    table_name = session["table_name"]
+
+    if request.method == "POST": 
+        
+        # Load user's current transaction information from a session.
+        transaction = session["transaction"]
+        
+        # Get the name where the user borrowed or lended money.
+        name = request.form.get("name")
+        session["name"] = name
+                
+        # Get the type of transaction.
+        transaction_type = transaction[2]    
+                                                                                 
+        # Update transaction 5.
+        transaction[5] = name
+        
+        # Turn amount to positive (Debt/Lend Collection) or negative (Lend/Debt Payment).
+        operation = db.execute("SELECT operation FROM ? WHERE name = ?", table_name[1], transaction_type)[0]["operation"]
+        transaction[3] = operation * transaction[3]
+
+        # Update user's selected account.
+        db.execute("UPDATE ? SET balance = balance + ? WHERE name = ?", table_name[0], transaction[3], transaction[4])
+        
+        # Check if the person already exists in the user's current debt/lend database.
+        existence = len(db.execute("SELECT name FROM ? WHERE ((name = ?) AND (type = ? OR type = 'synched'))", table_name[3], name, transaction_type))
+                
+        # Insert new table row if the person does not currently exists on the user's debt/lend database.
+        if existence == False and transaction_type not in ["Debt Payment", "Lend Collection"]: 
+            db.execute("INSERT INTO ? (name, balance, type) VALUES (?, ?, ?)", table_name[3], name, transaction[3], transaction[2])
+            
+        # Update table row if the person already exists in the user's current debt/lend database.
+        else:
+            
+            # Classify debt payment as lend (subtraction) and payment collection as debt (addition)
+            if transaction_type in ["Debt Payment", "Lend Collection"]:
+                
+                transaction_type = "Debt" if transaction_type == "Debt Payment" else "Lend"
+            
+            # Update the user's debt/lend database.           
+            db.execute("UPDATE ? SET balance = balance + ? WHERE ((name = ?) AND (type = ? OR type = 'synched'))",  table_name[3], transaction[3], name, transaction_type)
+            
+        # Swap receiver(Account 2) and sender (Account 1) if user will receive the money.
+        if transaction[3] < 0:
+                        
+            temp = transaction[5]
+            transaction[5] = transaction[4]
+            transaction[4] = temp
+
+        # Update user's transaction history.
+        db.execute("INSERT INTO {} (description, category, amount, receiver, sender) VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction))
+        
+        # Find th opposite transaction type of the current transaction type.
+        opposite_list = "Lend" if transaction_type == "Debt" else "Debt"     
+        session["opposite_list"] = opposite_list
+        
+        # Check if the person already exists in the opposite list.
+        opposite_existence = db.execute("SELECT name FROM ? WHERE name = ? and type = ?", table_name[3], name, opposite_list)
+            
+        # Set boolean values accordingly.
+        opposite_existence = False if len(opposite_existence) == 0 else True
+        
+        # Ask user if he/she wants to synch two matching names from opposite lists.
+        if opposite_existence == True:
+            return redirect("/synch")
+
+        else:
+            # Redirect user to history.  
+            return redirect(f"/history")
+    
+    else:
+        
+        # Load the people the user borrowed or lended money.        
+        people =  db.execute("SELECT * FROM ? WHERE (type = ? OR type = 'synched')", table_name[3], session["transaction"][2])
+        
+        # Render the form.
+        return render_template("lend_or_borrow.html", category=session["transaction"][2], people=people)
+
+
+@app.route("/synch", methods=["POST","GET"])
+@login_required
+def synch():
+    
+    # Load user's table names,
+    table_name = session["table_name"]
+    
+    # Get the name of person to synch from a session.
+    name = session["name"]
+    
+    # Get the type of opposite list from a session.
+    opposite_list = session["opposite_list"]
+    
+    # Load transaction type.
+    type = session["transaction"][2]
+    
+    if request.method == "POST":
+        
+        # Get user's synch approval.
+        approval = request.form.get("approval")
+        
+        # User agreed to synch.
+        if approval == "Yes":
+            
+            # Get the balance of the opposite name.
+            opposite_balance = db.execute("SELECT balance FROM ? WHERE name = ? AND type = ?", table_name[3], name, opposite_list)[0]["balance"]
+            
+            # Add the balances to row B.
+            db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ?)", table_name[3], opposite_balance, name, type)
+            
+            # Delete row A.
+            db.execute("DELETE FROM ? WHERE name = ? AND type = ?", table_name[3], name, opposite_list)
+            
+            # Set row B to "synched".
+            db.execute("UPDATE ? SET type = 'synched' WHERE name = ? AND type = ?", table_name[3], name, type)
+        
+        # Redirect user to history.
+        return redirect("/history")
+        
+    else:
+        
+        # Ask user for synch confirmation.
+        return render_template("synch_confirmation.html", name=name, opposite_list=opposite_list)
+        
+
+@app.route("/pay_collect", methods=["POST"])
+@login_required
+def pay_collect():
+     
+    # Load user's table names.
+    table_name = session["table_name"] 
+             
+    # Get the name the user is indebted to and the amount.
+    session["name"] = request.form.get("name")
+    session["amount"] = request.form.get("amount")
+    session["pay_collect"] = request.form.get("pay_collect")
+        
+    # Determine caption for the html.
+    if session["pay_collect"] == "Payment to":
+        caption = "Borrowed Money"
+        block_title = "Pay Debt"
+    else:
+        caption = "Lended Money"
+        block_title = "Collect Lend"
+    
+    # Load all user's added  accounts.
+    accounts = db.execute("SELECT name, balance FROM ?", table_name[0])
+        
+    # Redirect user to a form for debt payment processing.
+    return render_template("pay_collect.html", name=session["name"], amount=session["amount"], accounts=accounts,\
+        pay_collect=session["pay_collect"], caption=caption, block_title=block_title)
+    
+    
+@app.route("/confirmation", methods=["POST"])
+@login_required
+def confirmation():
+                
+    # Load description prefix.
+    pay_collect = session["pay_collect"]
+    name = session["name"]
+    
+    # Determine type of transaction
+    payment_collection = "Debt Payment" if pay_collect == "Payment to" else "Lend Collection"
+        
+    # Update the transaction in the session for processing.
+    session["transaction"][1] = pay_collect + " " + name
+    session["transaction"][2] = payment_collection
+    session["transaction"][3] = float(request.form.get("amount"))
+    session["transaction"][4] = request.form.get("account")
+    session["transaction"][5] = request.form.get("name")
+        
+    # Determine column title for the confirmation page.
+    column_4 = "None"
+    column_5 = "None"
+    
+    if pay_collect == "Payment to":
+        column_4 = "Deducted To "
+        column_5 = "Paid to"
+    else:
+        column_4 = "Added to "
+        column_5 = "Collected from"
+       
+    # process transaction in the "/regular" route.
+    return render_template("confirmation.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5, name = name)
+
+
+@app.route("/edit", methods=["GET", "POST"])
+@login_required
+def edit():
+    
+    if request.method == "POST":
+        
+        # Load the user's username.
+        username = session["username"]
+        
+        # Identify what database table to edit.
+        table_type = request.form.get("table_to_edit")
+        
+        # Create a debt or lend filter if invovled in the transaction.
+        filter = None
+        
+        # Create corresponding form placeholder base on the table type.
+        placeholder_caption = "Add new " + table_type
+            
+        # Create corresponding block title.
+        block_title = "Edit " + table_type
+            
+        # The table type is either debt or lend.
+        if table_type in ["Lend", "Debt"]:
+            
+            # Set filter to either debt or lend.
+            filter = table_type
+                        
+            # Create corresponding block title.
+            block_title = "Edit " + table_type + " list"
+            
+            # Get the elements from the table to edit.
+            elements = db.execute("SELECT name FROM ? WHERE (type LIKE ? or type = 'synched')", (username + "_debt_receivable"), filter)
+
+            # Set table type as debt_receivable.
+            table_type = "debt_receivable"
+            
+        # The table type is not lend nor lend.
+        else:
+            
+            # Get the elements from the table to edit.
+            elements = db.execute("SELECT name FROM ? ", (username + "_" + table_type))
+              
+        # Make balance form hidden if the user will edit description and visible otherwise.
+        balance_visibility = "hidden" if table_type != "accounts" else "number"
+        name_visibility = "hidden" if table_type == "debt_receivable" else "text"
+        button_visibility = 'hidden' if table_type == "debt_receivable" else "None"
+        
+        # Remmember html variables for later use.
+        session["table_type"] = table_type
+        session["balance_visibility"] = balance_visibility
+        session["button_visibility"] = button_visibility
+        session["name_visibility"] = name_visibility
+        session["placeholder_caption"] = placeholder_caption
+        session["block_title"] = block_title
+        session["filter"] = filter
+                
+        # Redirect to edit_2 route.
+        return redirect("/edit_2")
+        
+    else:
+        
+        return render_template("edit.html")
+
+@app.route("/edit_2", methods=["POST", "GET"])
+@login_required
+def edit_2():
+    
+    # Load the user's username.
+    username = session["username"]
+    
+    # Load the table type from a session.
+    table_type = session["table_type"]
+    
+    # Get the specific table name to edit.
+    table_to_edit = username + "_" + table_type
+    
+    # Remember table to edit.
+    session["table_to_edit"] = table_to_edit
+    
+    if request.method == "POST":
+        
+        # Get the chosen edit method.
+        method = request.form.get("method")
+                                
+        # User wants to modify or create.
+        if method in ["modify", "create"]:
+            
+            # Set balance form creator to True if type involves balance (account, debt, lend).
+            balance_form_creator = True if table_type != "description" else False
+            
+            # Set synch button creator to True if type involves debt or lend.
+            synch_button_creator = True if table_type in ["debt", "lend"] else False
+            
+            # User wants to modify.
+            if method == "modify":
+                
+                # Get the modified name for the account and save it into a sesison.
+                session["current_element_name"] = request.form.get("current_element_name")
+                
+                # Reroute user to the modification form.
+                return redirect("/modify")
+                                        
+            # user wants to create
+            elif method == "create":
+                
+                # Get the name to create.
+                element_to_create = request.form.get("element_to_create")
+                
+                # User input an element.
+                if element_to_create:
+                    
+                    # Insert new description in the database if new.
+                    if len(db.execute("SELECT name FROM ? WHERE name = ?", table_to_edit, element_to_create)) == 0:
+                        db.execute("INSERT INTO ? (name) VALUES (?)", table_to_edit, element_to_create)
+                        
+                        # The element to create has a balance category.
+                        if table_type != "description":
+                            
+                            # Get the balance to put it there is any.
+                            new_element_balance = request.form.get("new_element_balance")
+                                                        
+                            # User did not input any in the balance form.
+                            if not new_element_balance:
+                                
+                                # Set balance to zero if user did not input any.
+                                new_element_balance = float(0)
+                                
+                            # Put the balance in.
+                            db.execute("UPDATE ? SET balance = ? WHERE name = ?", table_to_edit, float(new_element_balance), element_to_create)
+                                                    
+                    else:
+                    
+                        # Send error message to user.
+                        return apology(f"{element_to_create} already exists!")
+
+                else:
+                    
+                    # Return error message.
+                    return apology("Input missing")
+        
+            # User wants to delete.
+        else:
+                
+            # Load the element to delete.
+            element_to_delete = request.form.get("element_to_delete")
+
+            # Delete the element selected by the user.
+            if element_to_delete:
+                
+                # If user will delete in accounts or descriptions table.
+                if table_type in ["accounts", "description"]:
+                    db.execute("DELETE FROM ? WHERE name = ?", table_to_edit, element_to_delete)
+                
+                # User will delete from the debt_receivable table.
+                else:
+                    db.execute("DELETE FROM ? WHERE ((name = ?) AND (type = ? or type = 'synched'))", table_to_edit, element_to_delete, session["filter"])
+                        
+        return redirect("/edit_2")
+        
+    else:
+        
+        # Unload all html variables from a session.
+        balance_visibility = session["balance_visibility"]
+        name_visibility = session["name_visibility"]
+        button_visibility = session["button_visibility"]
+        placeholder_caption = session["placeholder_caption"]
+        block_title = session["block_title"]
+        filter = session["filter"]
+        
+        # Identify table type.
+        table_type = session["table_type"]
+        
+        # Load all the elements depending on the type.
+        if table_type == "debt_receivable":
+            
+            # Load all debt/receivable elements.
+            elements = db.execute("SELECT name FROM ? WHERE (type LIKE ? or type = 'synched')", table_to_edit, filter)
+        
+        else:
+            
+            # Load non debt/receivable elemenets (descriptions or accounts)
+            elements = db.execute("SELECT name FROM ? ", table_to_edit)
+        
+        # Redirect user to the corresponding page.
+        return render_template("edit_general.html", elements=elements, placeholder_caption=placeholder_caption,\
+            balance_visibility=balance_visibility, name_visibility=name_visibility, button_visibility=button_visibility,\
+            table_type=table_type, block_title=block_title, strip_quote=strip_quote)
+
+
+@app.route("/modify", methods=["POST", "GET"])
+@login_required
+def modify():
+    
+    # Load user's username.
+    username = request.form.get("username")
+    
+    # Load all user's table name from a session.
+    table_type = session["table_type"]
+    
+    # Load the table to edit from a session.
+    table_to_edit = session["table_to_edit"]
+    
+    # Load the description to be renamed.
+    current_element_name = session["current_element_name"]
+    
+    # Load the element's current balance if table type is accounts.
+    if table_type == "accounts":
+        
+        current_element_balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_to_edit, current_element_name)[0]["balance"]
+        
+        # Set the balance form to text.
+        visibility = "text"
+                
+    else:
+        
+        current_element_balance = None
+        
+         # Set the balance form's visibility to hidden..
+        visibility = "hidden"
+    
+
+    if request.method == "POST":
+        
+        # Get the new element name.
+        new_element_name = request.form.get("new_element_name")
+        
+        # Get the new balance of the element if table type involves balance.
+        new_element_balance = request.form.get("new_element_balance")
+            
+        # Process the user's input for the new name.
+        if new_element_name:
+            
+            # Check the existence of username in the database.
+            existence = db.execute("SELECT name FROM ? where name = ?", table_to_edit, new_element_name)
+            
+            # Name already exists.
+            if existence:
+                return apology(f"{new_element_name} already exists!")
+            
+            # Name does not exist.
+            else:
+                
+                # User wants to modify elements from description or account tables.
+                if table_type != "debt_receivable":
+                    db.execute("UPDATE ? SET name = ? WHERE name = ?",  table_to_edit, new_element_name, current_element_name)
+                    
+                # User wants to modifyn debt/receivables table.
+                else:
+                    db.execute("UPDATE ? SET name = ? WHERE ((name = ?) AND (type = ? or type = 'synched'))", table_to_edit, new_element_name, current_element_name, session["filter"])
+                
+            # Set the current element name to its new name.
+            current_element_name = new_element_name
+            
+        # Update the element's current amound if the user input one.
+        if new_element_balance and table_type != "description":
+            db.execute("UPDATE ? SET balance = ? WHERE name = ?",  table_to_edit, new_element_balance, current_element_name)
+
+        # Redirect back to edit menu.          
+        return redirect("/edit_2")
+
+    else:
+        
+        #return apology(str(current_element_balance) + str(current_element_name))
+        return render_template("modify.html", current_element_name=current_element_name, current_element_balance=current_element_balance,\
+            visibility=visibility, table_type=session["table_type"])
+
+                 
+@app.route("/lend")
+@login_required
+def lend():
+    """Show user's lend list."""
+    
+    # Load user's table's names.
+    table_name = session["table_name"]
+    
+    # Load all the entities the user lend money to.
+    lends = db.execute("SELECT name, ABS(balance) as balance FROM ? WHERE balance < 0", table_name[3])
+
+    return render_template("lend.html", lends=lends)
+
+    
+@app.route("/debt")
+@login_required
+def borrow():
+
+    # Load user's table's names.
+    table_name = session["table_name"]
+    
+    # Load all the entities where the user borrowed money.
+    debts = db.execute("SELECT name, ABS(balance) as balance FROM ? WHERE balance > 0", table_name[3])
+
+    return render_template("debt.html", debts=debts)
     
     
 @app.route("/history")
@@ -625,6 +677,20 @@ def login():
         session["username"] = rows[0]["username"]
         session["user_id"] = rows[0]["id"]
         
+        # Store user's username.
+        username = session["username"]
+        
+        # Remember user's table names.
+        session["table_name"] = [
+            str(username + "_accounts"),
+            str(username + "_categories"),
+            username,
+            str(username + "_debt_receivable"),
+            str(username + "_description")]
+        
+        # Initialize transaction information list.
+        session["transaction"] = [None, None, None, None, None, None]
+
         # Redirect user to home page
         return redirect("/")
 
@@ -709,34 +775,34 @@ def register():
             username,
             str(username + "_debt_receivable"),
             str(username + "_description")]
+        
         # Store table names into a session.
         session["table_name"] = table_name
         
         # Create users' account database.
         db.execute("CREATE TABLE ? (\
             id INTEGER PRIMARY KEY,\
-            account_name TEXT,\
-            account_balance REAL)", table_name[0])
+            name TEXT,\
+            balance REAL)", table_name[0])
         
         # Populate user's account with default accounts.
         for i in range(3):
-            account_name = str(f"Account {i + 1}")
-            db.execute("INSERT INTO ? (account_name, account_balance) VALUES (?, ?)", table_name[0], account_name, 0)        
-
+            name = str(f"Account {i + 1}")
+            db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[0], name, 0)        
         for j in range(2):
-            account_name = str(f"Savings {j + 1}")
-            db.execute("INSERT INTO ? (account_name, account_balance) VALUES (?, ?)", table_name[0], account_name, 0)        
+            name = str(f"Savings {j + 1}")
+            db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[0], name, 0)        
 
         # Create users' category database.
         db.execute("CREATE TABLE ? (\
             id INTEGER PRIMARY KEY,\
-            category_name TEXT,\
-            category_operation INTEGER,\
-            lend_borrow INTEGER)", table_name[1])
+            name TEXT,\
+            operation INTEGER,\
+            lend_or_borrow INTEGER)", table_name[1])
         
         # Populate user's transaction category with dafault categories.
         db.execute("INSERT INTO ? (\
-            category_name, category_operation, lend_borrow)\
+            name, operation, lend_or_borrow)\
             VALUES ('Income', 1, 0), ('Expense', -1, 0),\
             ('Transfer', 0, 0),\
             ('Debt', 1, 1), ('Lend', -1, 1),\
@@ -749,16 +815,14 @@ def register():
             description TEXT,\
             amount REAL,\
             category TEXT,\
-            account_1 TEXT,\
-            account_2 TEXT,\
-            lend TEXT,\
-            borrow TEXT)", table_name[2])
+            receiver TEXT,\
+            sender TEXT)", table_name[2])
                 
         # Create user's debt and receivable tables.
         db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL, type TEXT)",  table_name[3])
         
         # Create user's default description.
-        db.execute("CREATE TABLE ? (id PRIMARY KEY, description TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
+        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
                         
         # Redirect to a route that shows user's profile porfolio.
         return redirect("/login")
@@ -821,3 +885,8 @@ def check_password_strength(password):
     password_strength += lower + upper + number + symbol
 
     return password_strength
+
+def strip_quote(value):
+    """Remove quotation marks."""
+    new_value = value.replace('"','')
+    return new_value

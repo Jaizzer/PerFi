@@ -6,7 +6,7 @@
 
 {% block main %}
     <div align="center">
-        <form action="/lend_borrow" method="post">
+        <form action="/lend_or_borrow" method="post">
             <div style="float:center;" class="mb-3">
                 <input class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
             </div>
@@ -15,12 +15,12 @@
     </div>
 
     <div align="center">
-        <form action="/lend_borrow" method="post">
+        <form action="/lend_or_borrow" method="post">
             <div style="float:center;" class="mb-3">
                 <select name="name">
                     <option disabled selected>Existing Names</option>
-                    {% for person_entity in people_entities %}
-                        <option value="{{ person_entity.name }}">{{ person_entity.name }}</option>
+                    {% for person in people %}
+                        <option value="{{ person.name }}">{{ person.name }}</option>
                     {% endfor %}
                 </select>
             </div>

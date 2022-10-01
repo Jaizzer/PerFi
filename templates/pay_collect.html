@@ -11,7 +11,7 @@
     <h5>{{ pay_collect }} "{{ name }}"</h5><hr>
     <h5>{{ caption }}: {{ amount }}</h5><hr>
 
-    <form action="/pay_collect_2" method="post">
+    <form action="/confirmation" method="post">
         <input class="form-control mx-auto w-auto" id="amount" name="amount" placeholder="{{ amount }}" type="number", min="1", max="{{ amount }}">
         <input type="hidden" id="name" name="name" value="{{ name }}">
         <input type="hidden" id="collect" name="pay_collect" value="{{ pay_collect }}">
@@ -19,7 +19,7 @@
             <select name="account">
                 <option disabled selected>Account To Use</option>
                 {% for account in accounts %}
-                    <option value="{{ account.account_name }}">{{ account.account_name }}</option>
+                    <option value="{{ account.name }}">{{ account.name }}</option>
                 {% endfor %}
             </select>
         </div>
