@@ -57,16 +57,31 @@ def index():
             request.form.get("amount", type=float), 
             request.form.get("account"), 
             request.form.get("description")]
-                
-        # Classify  transaction whether it's regular or involves lend/borrow.
-        transaction_classifier = db.execute("SELECT lend_or_borrow FROM ? WHERE name = ?", table_name[1], session["transaction"][2])[0]["lend_or_borrow"]
         
-        # Redirect user to the corresponding route.
-        route_name = "regular" if transaction_classifier == 0 else "lend_or_borrow"
-        
-        # Redirect to the corresponding route.
-        return redirect(f"/{route_name}")
-                 
+        # Reload page if user did not input anythin.
+        if None in session["transaction"]:
+            return apology("lacks input/s")
+            return redirect("/")
+
+        # Check if user completed all the inputs.
+        else:
+            
+            # Get the current balance of the user's selected account.
+            current_balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_name[0], session["transaction"][4])[0]["balance"]
+            
+            # Check if user has enough money to give/spend/pay.
+            if session["transaction"][3] > current_balance and session["transaction"][2] != "Income":
+                return apology(f"{session['transaction'][4]} does not have enough balance for the transaction")
+            
+            # Classify  transaction whether it's regular or involves lend/borrow.
+            transaction_classifier = db.execute("SELECT lend_or_borrow FROM ? WHERE name = ?", table_name[1], session["transaction"][2])[0]["lend_or_borrow"]
+            
+            # Redirect user to the corresponding route.
+            route_name = "regular" if transaction_classifier == 0 else "lend_or_borrow"
+            
+            # Redirect to the corresponding route.
+            return redirect(f"/{route_name}")
+
     else:
         
         # Load all user's accounts.
@@ -339,7 +354,7 @@ def pay_collect():
     session["name"] = request.form.get("name")
     session["amount"] = request.form.get("amount")
     session["pay_collect"] = request.form.get("pay_collect")
-        
+    
     # Determine caption for the html.
     if session["pay_collect"] == "Payment to":
         caption = "Borrowed Money"
@@ -386,12 +401,7 @@ def confirmation():
         column_5 = "Collected from"
        
     # process transaction in the "/regular" route.
-    return render_template("confirmation.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5, name = name)
-
-
-def error_handler():
-    return apology("hello")
-    
+    return render_template("confirmation.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5, name = name)    
 
 
 @app.route("/edit", methods=["GET", "POST"])
