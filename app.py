@@ -60,7 +60,6 @@ def index():
         
         # Reload page if user did not input anythin.
         if None in session["transaction"]:
-            return apology("lacks input/s")
             return redirect("/")
 
         # Check if user completed all the inputs.
@@ -70,7 +69,7 @@ def index():
             current_balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_name[0], session["transaction"][4])[0]["balance"]
             
             # Check if user has enough money to give/spend/pay.
-            if session["transaction"][3] > current_balance and session["transaction"][2] != "Income":
+            if session["transaction"][3] > current_balance and session["transaction"][2] not in ["Income", "Debt"]:
                 return apology(f"{session['transaction'][4]} does not have enough balance for the transaction")
             
             # Classify  transaction whether it's regular or involves lend/borrow.
@@ -188,6 +187,10 @@ def lend_or_borrow():
         # Get the name where the user borrowed or lended money.
         name = request.form.get("name")
         session["name"] = name
+        
+        # Reload page if user did not input a name.
+        if not name:
+            return redirect("/lend_or_borrow")
                 
         # Get the type of transaction.
         transaction_type = transaction[2]    
@@ -267,16 +270,14 @@ def synch():
     
     # Load user's table names,
     table_name = session["table_name"]
-            
-    # Get the source of unsynch request.
-    request_source = request.form.get("request_source")
-    
+                
     # Update values if synch request came from debt/edit list.
     if request.form.get("name"):
         name = request.form.get("name")
         type = request.form.get("type")
         opposite_transaction_type = "Debt" if type == "Lend" else "Lend"
         approval = "Yes"
+        request_source = request.form.get("request_source")
     
     # Update values if synch request came from actual transaction process.
     else:
@@ -284,7 +285,7 @@ def synch():
         opposite_transaction_type = session["opposite_transaction_type"]
         approval = request.form.get("approval")
         type = session["transaction"][2]
-
+        request_source = "history"
 
     if request.method == "POST":
         
@@ -311,7 +312,7 @@ def synch():
         # Ask user for synch confirmation.
         return render_template("synch_confirmation.html", name=name, opposite_transaction_type=opposite_transaction_type)
         
-@app.route("/unsynch", methods={"POST"})
+@app.route("/unsynch", methods=["POST"])
 @login_required
 def unsynch():
     
@@ -340,70 +341,79 @@ def unsynch():
         db.execute("UPDATE ? SET balance = 0, type = 'Debt' WHERE name = ?", table_name[3], name)
         db.execute("INSERT INTO ? (name, balance, type) VALUES (?, 0, 'Lend')", table_name[3], name)
     
-    
+    # Redirect user back to the list.
     return redirect(f"/{request_source}")
 
-@app.route("/pay_collect", methods=["POST"])
+
+@app.route("/pay_collect", methods=["POST", "GET"])
 @login_required
 def pay_collect():
      
     # Load user's table names.
     table_name = session["table_name"] 
-             
-    # Get the name the user is indebted to and the amount.
-    session["name"] = request.form.get("name")
-    session["amount"] = request.form.get("amount")
-    session["pay_collect"] = request.form.get("pay_collect")
     
-    # Determine caption for the html.
-    if session["pay_collect"] == "Payment to":
-        caption = "Borrowed Money"
-        block_title = "Pay Debt"
-    else:
-        caption = "Lended Money"
-        block_title = "Collect Lend"
-    
-    # Load all user's added  accounts.
-    accounts = db.execute("SELECT name, balance FROM ?", table_name[0])
+    if request.method == "POST":
         
-    # Redirect user to a form for debt payment processing.
-    return render_template("pay_collect.html", name=session["name"], amount=session["amount"], accounts=accounts,\
-        pay_collect=session["pay_collect"], caption=caption, block_title=block_title)
-    
-    
-@app.route("/confirmation", methods=["POST"])
-@login_required
-def confirmation():
+        # Load description prefix.
+        pay_collect = session["pay_collect"]
+        name = session["name"]
                 
-    # Load description prefix.
-    pay_collect = session["pay_collect"]
-    name = session["name"]
-    
-    # Determine type of transaction
-    payment_collection = "Debt Payment" if pay_collect == "Payment to" else "Lend Collection"
+        # Get the transaction amount.
+        transaction_amount = request.form.get("amount")
         
-    # Update the transaction in the session for processing.
-    session["transaction"][1] = pay_collect + " " + name
-    session["transaction"][2] = payment_collection
-    session["transaction"][3] = float(request.form.get("amount"))
-    session["transaction"][4] = request.form.get("account")
-    session["transaction"][5] = request.form.get("name")
+        # Save the account the user selected.
+        account = request.form.get("account")
         
-    # Determine column title for the confirmation page.
-    column_4 = "None"
-    column_5 = "None"
-    
-    if pay_collect == "Payment to":
-        column_4 = "Deducted To "
-        column_5 = "Paid to"
+        # Reload if the user did not input account to use.
+        if account == None or transaction_amount == "":
+            return redirect("/pay_collect")
+        
+        # User input an account.
+        else:
+            
+            # Get the account's current balance.
+            balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_name[0], account)[0]["balance"]
+
+            # Set transaction amount to type float.
+            transaction_amount = float(transaction_amount)
+            
+            # Send error if current balance is not enough for the transaction that will take money from him/her.
+            if balance < transaction_amount and pay_collect == "Payment to":
+                return apology(f"{account} does not have enough balance for the transaction.")
+            
+            # Account has enough balance.
+            else:
+                                
+                # Determine type of transaction
+                payment_collection = "Debt Payment" if pay_collect == "Payment to" else "Lend Collection"
+                    
+                # Update the transaction in the session for processing.
+                session["transaction"][1] = pay_collect + " " + name
+                session["transaction"][2] = payment_collection
+                session["transaction"][3] = transaction_amount
+                session["transaction"][4] = account
+                session["transaction"][5] = name
+                    
+                # Determine column title for the confirmation page.
+                column_4 = "None"
+                column_5 = "None"
+                
+                if pay_collect == "Payment to":
+                    column_4 = "Deducted To "
+                    column_5 = "Paid to"
+                else:
+                    column_4 = "Added to "
+                    column_5 = "Collected from"
+                
+                # process transaction in the "/regular" route.
+                return render_template("confirmation.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5, name = name)    
+
     else:
-        column_4 = "Added to "
-        column_5 = "Collected from"
-       
-    # process transaction in the "/regular" route.
-    return render_template("confirmation.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5, name = name)    
-
-
+        # Redirect user to a form for debt payment processing.
+        return render_template("pay_collect.html", name=session["name"], amount=session["amount"], accounts=session["accounts"],\
+            pay_collect=session["pay_collect"], caption=session["caption"], block_title=session["block_title"])
+    
+    
 @app.route("/edit", methods=["GET", "POST"])
 @login_required
 def edit():
@@ -671,7 +681,7 @@ def modify():
             visibility=visibility, table_type=session["table_type"])
 
                  
-@app.route("/lend")
+@app.route("/lend",methods=["GET", "POST"])
 @login_required
 def lend():
     """Show user's lend list."""
@@ -685,10 +695,32 @@ def lend():
     # Load user's debt list.
     debts = db.execute("SELECT name FROM ? WHERE type = 'Debt'", table_name[3])
 
-    return render_template("lend.html", lends=lends, debts=debts)
+    if request.method == "POST":
+        
+        # Get the name the user is indebted to and the amount.
+        session["name"] = request.form.get("name")
+        session["amount"] = request.form.get("amount")
+        session["pay_collect"] = request.form.get("pay_collect")
+        
+        # Determine caption for the html.
+        if session["pay_collect"] == "Payment to":
+            session["caption"] = "Borrowed Money"
+            session["block_title"] = "Pay Debt"
+            
+        else:
+            session["caption"] = "Lended Money"
+            session["block_title"] = "Collect Lend"
+        
+        # Load all user's added  accounts.
+        session["accounts"] = db.execute("SELECT name, balance FROM ?", table_name[0])
+
+        return redirect("/pay_collect")
+    
+    else:
+        return render_template("lend.html", debts=debts, lends=lends)
 
     
-@app.route("/debt")
+@app.route("/debt", methods=["GET", "POST"])
 @login_required
 def borrow():
 
@@ -700,8 +732,30 @@ def borrow():
     
     # Load user's lend list.
     lends = db.execute("SELECT name FROM ? WHERE type = 'Lend'", table_name[3])
+    
+    if request.method == "POST":
         
-    return render_template("debt.html", debts=debts, lends=lends)
+        # Get the name the user is indebted to and the amount.
+        session["name"] = request.form.get("name")
+        session["amount"] = request.form.get("amount")
+        session["pay_collect"] = request.form.get("pay_collect")
+        
+        # Determine caption for the html.
+        if session["pay_collect"] == "Payment to":
+            session["caption"] = "Borrowed Money"
+            session["block_title"] = "Pay Debt"
+            
+        else:
+            session["caption"] = "Lended Money"
+            session["block_title"] = "Collect Lend"
+        
+        # Load all user's added  accounts.
+        session["accounts"] = db.execute("SELECT name, balance FROM ?", table_name[0])
+
+        return redirect("/pay_collect")
+    
+    else:
+        return render_template("debt.html", debts=debts, lends=lends)
     
     
 @app.route("/history")
