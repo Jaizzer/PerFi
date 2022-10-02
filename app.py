@@ -312,6 +312,7 @@ def synch():
         # Ask user for synch confirmation.
         return render_template("synch_confirmation.html", name=name, opposite_transaction_type=opposite_transaction_type)
         
+        
 @app.route("/unsynch", methods=["POST"])
 @login_required
 def unsynch():
@@ -476,6 +477,7 @@ def edit():
     else:
         
         return render_template("edit.html")
+
 
 @app.route("/edit_2", methods=["POST", "GET"])
 @login_required
@@ -948,6 +950,7 @@ def register():
         # Display to user the place to register.
         return render_template("register.html")
 
+
 def check_password_strength(password):
 
     # Initialize list of lowercase alphabet.
@@ -1001,6 +1004,7 @@ def check_password_strength(password):
     password_strength += lower + upper + number + symbol
 
     return password_strength
+
 
 def strip_quote(value):
     """Remove quotation marks."""
