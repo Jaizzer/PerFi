@@ -201,7 +201,10 @@ def lend_or_borrow():
             if transaction_type in ["Debt Payment", "Lend Collection"]:
                 
                 transaction_type = "Debt" if transaction_type == "Debt Payment" else "Lend"
-            
+                
+                # Remember transaction type.
+                session["transaction"][2] = transaction_type
+                
             # Update the user's debt/lend database.           
             db.execute("UPDATE ? SET balance = balance + ? WHERE ((name = ?) AND (type = ? OR type = 'synched'))",  table_name[3], transaction[3], name, transaction_type)
             
@@ -216,26 +219,27 @@ def lend_or_borrow():
         db.execute("INSERT INTO {} (description, category, amount, receiver, sender) VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction))
         
         # Find th opposite transaction type of the current transaction type.
-        opposite_list = "Lend" if transaction_type == "Debt" else "Debt"     
-        session["opposite_list"] = opposite_list
+        opposite_transaction_type = "Lend" if transaction_type == "Debt" else "Debt"     
+        session["opposite_transaction_type"] = opposite_transaction_type
         
-        # Check if the person already exists in the opposite list.
-        opposite_existence = db.execute("SELECT name FROM ? WHERE name = ? and type = ?", table_name[3], name, opposite_list)
+        # Get the person in the opposite list if exists.
+        opposite_person = db.execute("SELECT name FROM ? WHERE name = ? and type = ?", table_name[3], name, opposite_transaction_type)
             
-        # Set boolean values accordingly.
-        opposite_existence = False if len(opposite_existence) == 0 else True
+        # Check if the person in the opposite list exists.
+        opposite_existence = False if len(opposite_person) == 0 else True
         
         # Ask user if he/she wants to synch two matching names from opposite lists.
         if opposite_existence == True:
             return redirect("/synch")
 
+        # Redirect to transaction history if ther is nothing to synch.
         else:
             # Redirect user to history.  
             return redirect(f"/history")
     
     else:
         
-        # Load the people the user borrowed or lended money.        
+        # Load the people where user borrowed or lended money.        
         people =  db.execute("SELECT * FROM ? WHERE (type = ? OR type = 'synched')", table_name[3], session["transaction"][2])
         
         # Render the form.
@@ -248,44 +252,81 @@ def synch():
     
     # Load user's table names,
     table_name = session["table_name"]
+            
+    # Get the source of unsynch request.
+    request_source = request.form.get("request_source")
     
-    # Get the name of person to synch from a session.
-    name = session["name"]
+    # Update values if synch request came from debt/edit list.
+    if request.form.get("name"):
+        name = request.form.get("name")
+        type = request.form.get("type")
+        opposite_transaction_type = "Debt" if type == "Lend" else "Lend"
+        approval = "Yes"
     
-    # Get the type of opposite list from a session.
-    opposite_list = session["opposite_list"]
-    
-    # Load transaction type.
-    type = session["transaction"][2]
-    
-    if request.method == "POST":
-        
-        # Get user's synch approval.
+    # Update values if synch request came from actual transaction process.
+    else:
+        name = session["name"]
+        opposite_transaction_type = session["opposite_transaction_type"]
         approval = request.form.get("approval")
+        type = session["transaction"][2]
+
+
+    if request.method == "POST":
         
         # User agreed to synch.
         if approval == "Yes":
             
             # Get the balance of the opposite name.
-            opposite_balance = db.execute("SELECT balance FROM ? WHERE name = ? AND type = ?", table_name[3], name, opposite_list)[0]["balance"]
+            opposite_balance = db.execute("SELECT balance FROM ? WHERE name = ? AND type = ?", table_name[3], name, opposite_transaction_type)[0]["balance"]
             
             # Add the balances to row B.
             db.execute("UPDATE ? SET balance = balance + ? WHERE (name = ? AND type = ?)", table_name[3], opposite_balance, name, type)
             
             # Delete row A.
-            db.execute("DELETE FROM ? WHERE name = ? AND type = ?", table_name[3], name, opposite_list)
+            db.execute("DELETE FROM ? WHERE name = ? AND type = ?", table_name[3], name, opposite_transaction_type)
             
             # Set row B to "synched".
             db.execute("UPDATE ? SET type = 'synched' WHERE name = ? AND type = ?", table_name[3], name, type)
         
-        # Redirect user to history.
-        return redirect("/history")
+        # Redirect user to the current list..
+        return redirect(f"/{request_source}")
         
     else:
         
         # Ask user for synch confirmation.
-        return render_template("synch_confirmation.html", name=name, opposite_list=opposite_list)
+        return render_template("synch_confirmation.html", name=name, opposite_transaction_type=opposite_transaction_type)
         
+@app.route("/unsynch", methods={"POST"})
+@login_required
+def unsynch():
+    
+    # Load all user's table name.
+    table_name = session["table_name"]
+    
+    # Get the name to synch.
+    name = request.form.get("name")
+    
+    # Get the source of unsynch request.
+    request_source = request.form.get("request_source")
+    
+    # Get the current balance of the synched person.
+    balance = db.execute("SELECT balance FROM ? WHERE name = ? and type = 'synched'", table_name[3], name)[0]["balance"]
+    
+    # Split the table depending on the amount of balance.
+    if balance > 0:
+        db.execute("UPDATE ? SET balance = balance, type = 'Debt' WHERE name = ?", table_name[3], name)
+        db.execute("INSERT INTO ? (name, balance, type) VALUES (?, 0, 'Lend')", table_name[3], name)
+        
+    elif balance < 0:
+        db.execute("UPDATE ? SET balance = balance, type = 'Lend' WHERE name = ?", table_name[3], name)
+        db.execute("INSERT INTO ? (name, balance, type) VALUES (?, 0, 'Debt')", table_name[3], name)
+        
+    else:
+        db.execute("UPDATE ? SET balance = 0, type = 'Debt' WHERE name = ?", table_name[3], name)
+        db.execute("INSERT INTO ? (name, balance, type) VALUES (?, 0, 'Lend')", table_name[3], name)
+    
+    
+    return redirect(f"/{request_source}")
 
 @app.route("/pay_collect", methods=["POST"])
 @login_required
@@ -346,6 +387,11 @@ def confirmation():
        
     # process transaction in the "/regular" route.
     return render_template("confirmation.html", transactions=session["transaction"][1:], column_4=column_4, column_5=column_5, name = name)
+
+
+def error_handler():
+    return apology("hello")
+    
 
 
 @app.route("/edit", methods=["GET", "POST"])
@@ -624,9 +670,12 @@ def lend():
     table_name = session["table_name"]
     
     # Load all the entities the user lend money to.
-    lends = db.execute("SELECT name, ABS(balance) as balance FROM ? WHERE balance < 0", table_name[3])
+    lends = db.execute("SELECT name, IIF(balance >= 0, 0, ABS(balance)) AS balance, type FROM ? WHERE type = 'Lend' or type = 'synched'", table_name[3])
+    
+    # Load user's debt list.
+    debts = db.execute("SELECT name FROM ? WHERE type = 'Debt'", table_name[3])
 
-    return render_template("lend.html", lends=lends)
+    return render_template("lend.html", lends=lends, debts=debts)
 
     
 @app.route("/debt")
@@ -637,9 +686,12 @@ def borrow():
     table_name = session["table_name"]
     
     # Load all the entities where the user borrowed money.
-    debts = db.execute("SELECT name, ABS(balance) as balance FROM ? WHERE balance > 0", table_name[3])
-
-    return render_template("debt.html", debts=debts)
+    debts = db.execute("SELECT name, IIF(balance <= 0, 0, ABS(balance)) AS balance, type FROM ? WHERE type = 'Debt' or type = 'synched'", table_name[3])
+    
+    # Load user's lend list.
+    lends = db.execute("SELECT name FROM ? WHERE type = 'Lend'", table_name[3])
+        
+    return render_template("debt.html", debts=debts, lends=lends)
     
     
 @app.route("/history")
