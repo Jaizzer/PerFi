@@ -120,17 +120,17 @@ def regular():
     # The category is either "Income" or "Expense".
     else:
         
+        # Update user's selected account.
+        db.execute("UPDATE ? SET balance = balance + ?\
+            WHERE name = ?", table_name[0], transaction[3], transaction[4])
+
         # Swap receiver (user's account) and sender (description) if transaction type is "Expense."
         if transaction[3] < 0:
                         
             temp = transaction[5]
             transaction[5] = transaction[4]
             transaction[4] = temp
-        
-        # Update user's selected account.
-        db.execute("UPDATE ? SET balance = balance + ?\
-            WHERE name = ?", table_name[0], transaction[3], transaction[4])
-                
+                        
     # Update user's transaction history.
     db.execute("INSERT INTO {} (description, category, amount, receiver, sender)\
             VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction))

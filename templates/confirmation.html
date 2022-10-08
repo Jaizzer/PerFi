@@ -5,35 +5,34 @@
 {% endblock %}
 
 {% block main %}
-<hr>
-<h5>Transaction Summary</h5><hr>
-
-
-<div class="section">
-    <table class="table">
-        <thead>
-            <tr>
-                <td>Description</td>
-                <td>Category</td>
-                <td>Amount</td>
-                <td>{{ column_4  }}</td>
-                <td>{{ column_5 }}</td>
-            </tr>
-        </thead>
-        <tbody>
+    <hr><h5>Transaction Summary</h5><hr>
+    <div>
+        <table>
+            <thead>
                 <tr>
-                    {% for transaction in transactions %}
-                    <td>{{ transaction }}</td>
-                    {% endfor %}
+                    <td>Description</td>
+                    <td>Category</td>
+                    <td>Amount</td>
+                    <td>{{ column_4  }}</td>
+                    <td>{{ column_5 }}</td>
                 </tr>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                    <tr>
+                        {% for transaction in transactions %}
+                        <td>{{ transaction }}</td>
+                        {% endfor %}
+                    </tr>
+            </tbody>
+        </table>
 
-<form action="/lend_or_borrow" method="post">
-        <input type="hidden" id="name" name="name" value="{{ name }}">
-        <button style="float:center" class="btn btn-primary" type="submit">Confirm</button>
-</form
+        <form action="/lend_or_borrow" method="post">
+            <input type="hidden" name="name" value="{{ name }}">
+            <button type="submit">Confirm</button>
+        </form
 
-</div>
+    </div>
+
+</main>
 
 {% endblock %}

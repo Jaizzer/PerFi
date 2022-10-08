@@ -5,64 +5,100 @@
 {% endblock %}
 
 {% block main %}
-    <div>
-        <h4>{{ username }}</h4>
-    </div>
-    <div align="center">
-        <form action="/edit" method="post">
-            <div>
-                <input type="hidden" id="edit" name="table_to_edit" value="description">
-                <button style="float:center" class="btn btn-primary" href="/edit">+</button>
-            </div>
-         </form>
-        <form action="/" method="post">
-            <div style="float:center;" class="mb-3">
-                <select name="description">
-                    <option disabled selected>Description</option>
-                    {% for description in descriptions %}
-                        <option value="{{ description.name}}">{{ description.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="float:center;" class="mb-3">
-                <input class="form-control mx-auto w-auto" id="amount" name="amount" placeholder="Amount" type="number", min="1">
-            </div>
-            <div style="float:center;" class="mb-3">
-                <select name="account">
-                    <option disabled selected>Account To Use</option>
-                    {% for account in accounts %}
-                        <option value="{{ account.name }}">{{ account.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="float:center;" class="mb-3">
-                <select name="category">
-                    <option disabled selected>Transaction Type</option>
-                    {% for category in categories %}
-                        <option value="{{ category.name }}">{{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button style="float:center" class="btn btn-primary" type="submit">Proceed</button>
-        </form>
-    </div>
 
-    <div class="section">
-        <table class="table">
-            <thead>
-                <tr>
-                    <td>Account</td>
-                    <td>Balance</td>
-                </tr>
-            </thead>
-            <tbody>
-                {% for account in accounts %}
+        <div>
+            <h4>{{ username }}</h4>
+        </div>
+
+        <div>
+
+            <form action="/edit" method="post">
+
+                <div>
+                    <input type="hidden" name="table_to_edit" value="description">
+                    <button href="/edit">+</button>
+                </div>
+
+            </form>
+
+            <form action="/" method="post">
+            <div>
+                <div>
+                    
+                    <select name="description">
+
+                        <option disabled selected>Description</option>
+                        {% for description in descriptions %}
+                        <option value="{{ description.name}}">{{ description.name }}</option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+            </div>
+
+                <div>
+                    <input name="amount" placeholder="Amount" type="number", min="1">
+                </div>
+
+                <div>
+
+                    <select name="account">
+
+                        <option disabled selected>Account To Use</option>
+                        {% for account in accounts %}
+                        <option value="{{ account.name }}">{{ account.name }}</option>
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <select name="category">
+
+                        <option disabled selected>Transaction Type</option>
+                        {% for category in categories %}
+                        <option value="{{ category.name }}">{{ category.name }}</option>
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <button type="submit">Proceed</button>
+
+            </form>
+
+        </div>
+    
+
+        <div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <td>Account</td>
+                        <td>Balance</td>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for account in accounts %}
                     <tr>
                         <td>{{ account.name }}</td>
                         <td>{{ account.balance }}</td>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>    
+                    {% endfor %}
+                    
+                </tbody>
+
+            </table>
+
+        </div>    
+    
 {% endblock %}

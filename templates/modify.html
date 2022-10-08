@@ -6,13 +6,23 @@
 
 {% block main %}
 
-<div class="section">
-    <header>You are about to modify "{{ current_element_name }}"</header><hr>
-    <form action="/modify" method="post">
-        <input class="form-control mx-auto w-auto" id="new_element_name" name="new_element_name" placeholder="Rename: {{ current_element_name }}" type="text">
-        <input class="form-control mx-auto w-auto" id="new_element_balance" name="new_element_balance" placeholder="Balance: {{ current_element_balance }}" type="{{ visibility }}">
-        <button style="float:center" class="btn btn-primary" type="submit">Save</button>
-    </form>
-</div>
+<main class="main-content" style="width:137%">
+
+    <div>
+
+        <header>You are about to modify "{{ current_element_name }}"</header><hr>
+
+        <form action="/modify" method="post">
+
+            <input name="new_element_name" placeholder="Rename: {{ current_element_name }}" type="text">
+            <input name="new_element_balance" placeholder="Balance: {{ current_element_balance }}" type="{{ visibility }}">
+            
+            <button type="submit">Save</button>
+
+        </form>
+
+    </div>
+
+</main>
 
 {% endblock %}

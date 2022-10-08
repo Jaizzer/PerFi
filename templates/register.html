@@ -5,49 +5,60 @@
 {% endblock %}
 
 {% block main %}
+
     <form action="/register" method="post">
+
         <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="username" name="username" placeholder="Username" type="text">
+            <input name="username" placeholder="Username" type="text">
         </div>
+
         <div class="mb-3">
-            <input class="form-control mx-auto w-auto" id="password" name="password" placeholder="Password" type="password">
+            <input name="password" placeholder="Password" type="password">
         </div>
+
         <div class="mb-3">
-            <input class="form-control mx-auto w-auto" id="password" name="confirmation" placeholder="Confirm Password" type="password">
+            <input name="confirmation" placeholder="Confirm Password" type="password">
         </div>
-        <button class="btn btn-primary" type="submit">Register</button>
+
+        <button type="submit">Register</button>
+
     </form>
+    
 
     <div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>
-                    </th>
-                </tr>
-            </thead>
+
+        <table>
 
             <tbody>
                 <tr>
                     <th><h6>Your password must:</h6></th>
                 </tr>
+
                 <tr>
                     <th><h6>1. Contain lower case letters</h6></th>
                 </tr>
+
                 <tr>
                     <th><h6>2. Contain upper case letters</h6></th>
                 </tr>
+
                 <tr>
                     <th><h6>3. Contain numbers</h6></th>
                 </tr>
+
                 <tr>
                     <th><h6>4. Contain special symbols</h6></th>
                 </tr>
+
                 <tr>
                     <th><h6>5. Be atleast 10 characters long</h6></th>
                 </tr>
+
             </tbody>
+
         </table>
+
     </div>
+
 {% endblock %}
 

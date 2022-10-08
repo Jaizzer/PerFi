@@ -5,27 +5,45 @@
 {% endblock %}
 
 {% block main %}
-    <div align="center">
+<main class="main-content" style="width:137%">
+
+    <div>
+        
         <form action="/lend_or_borrow" method="post">
-            <div style="float:center;" class="mb-3">
-                <input class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
+
+            <div>
+                <input name="name" placeholder="Name" type="text">
             </div>
-            <button style="float:center" class="btn btn-primary" type="submit">Proceed</button>
+
+            <button type="submit">Proceed</button>
+
         </form>
+
     </div>
 
-    <div align="center">
+    <div>
+
         <form action="/lend_or_borrow" method="post">
-            <div style="float:center;" class="mb-3">
+
+            <div>
+
                 <select name="name">
                     <option disabled selected>Existing Names</option>
+
                     {% for person in people %}
-                        <option value="{{ person.name }}">{{ person.name }}</option>
+                    <option value="{{ person.name }}">{{ person.name }}</option>
                     {% endfor %}
+
                 </select>
+
             </div>
-            <button style="float:center" class="btn btn-primary" type="submit">Proceed</button>
+
+            <button type="submit">Proceed</button>
+
         </form>
+
     </div>
+
+</main>
 
 {% endblock %}
