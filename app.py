@@ -46,7 +46,10 @@ def index():
     
     # Load user's table name.
     table_name = session["table_name"]
-        
+    
+    # Remember user's username
+    username = session["username"]
+    
     if request.method == "POST":
         
         # Save all the transaction information into a list.
@@ -96,7 +99,7 @@ def index():
         # Load transaction categories excluding 'Debt Payment' and 'Lend Collection'.
         categories = db.execute("SELECT name FROM ? WHERE (name != 'Debt Payment' AND name != 'Lend Collection')", table_name[1])
                         
-        return render_template("home.html", accounts=accounts, categories=categories, username=table_name[2], descriptions=descriptions)
+        return render_template("home.html", accounts=accounts, categories=categories, username=username, descriptions=descriptions)
 
 
 @app.route("/regular")
@@ -145,6 +148,9 @@ def regular():
 @login_required
 def transfer():
     
+    # Load the user's username.
+    username = session["username"]
+
     # Load user's current transaction information from a session.
     transaction = session["transaction"]
     
@@ -172,7 +178,7 @@ def transfer():
         # Load all user's added  accounts.
         accounts = db.execute("SELECT * FROM ? WHERE name != ?", table_name[0], transaction[4])
 
-        return render_template("transfer.html", accounts=accounts, category=transaction[2])
+        return render_template("transfer.html", accounts=accounts, category=transaction[2], username=username)
 
 
 @app.route("/lend_or_borrow", methods=["GET", "POST"])
@@ -184,6 +190,9 @@ def lend_or_borrow():
     
     # Load user's current transaction information from a session.
     transaction = session["transaction"]
+    
+    # Load the user's username.
+    username = session["username"]
 
     if request.method == "POST": 
                 
@@ -270,7 +279,7 @@ def lend_or_borrow():
             confirmation =  "Are you sure you want to lend " + str(transaction[3]) + " to "
 
         # Render the form.
-        return render_template("lend_or_borrow.html", category=transaction[2], people=people, amount=transaction[3], confirmation=confirmation)
+        return render_template("lend_or_borrow.html", category=transaction[2], people=people, amount=transaction[3], confirmation=confirmation, username=username)
 
 
 @app.route("/synch", methods=["POST","GET"])
@@ -279,7 +288,10 @@ def synch():
     
     # Load user's table names,
     table_name = session["table_name"]
-                
+    
+    # Load the user's username.
+    username = session["username"]
+
     # Update values if synch request came from debt/edit list.
     if request.form.get("name"):
         name = request.form.get("name")
@@ -319,7 +331,7 @@ def synch():
     else:
         
         # Ask user for synch confirmation.
-        return render_template("synch_confirmation.html", name=name, opposite_transaction_type=opposite_transaction_type)
+        return render_template("synch_confirmation.html", name=name, opposite_transaction_type=opposite_transaction_type, username=username)
         
         
 @app.route("/unsynch", methods=["POST"])
@@ -362,6 +374,9 @@ def pay_collect():
     # Load user's table names.
     table_name = session["table_name"] 
     
+    # Load the user's username.
+    username = session["username"]
+
     if request.method == "POST":
         
         # Load description prefix.
@@ -421,7 +436,7 @@ def pay_collect():
     else:
         # Redirect user to a form for debt payment processing.
         return render_template("pay_collect.html", name=session["name"], amount=session["amount"], accounts=session["accounts"],\
-            pay_collect=session["pay_collect"], caption=session["caption"], block_title=session["block_title"])
+            pay_collect=session["pay_collect"], caption=session["caption"], block_title=session["block_title"], username=username)
     
     
 @app.route("/edit_description", methods=["GET", "POST"])
@@ -495,7 +510,7 @@ def edit_description():
         descriptions = db.execute("SELECT name FROM ?", table_to_edit)
         
         # Render the descriptions
-        return render_template("edit_description.html", descriptions=descriptions)
+        return render_template("edit_description.html", descriptions=descriptions, username=username)
     
     
 @app.route("/edit_debt", methods=["GET", "POST"])
@@ -540,7 +555,7 @@ def edit_debt():
         debt = db.execute("SELECT name FROM ? WHERE type = 'Debt' OR type ='synched'", table_to_edit)
         
         # Render the descriptions
-        return render_template("edit_debt.html", debts=debt)
+        return render_template("edit_debt.html", debts=debt, username=username)
 
 
 @app.route("/edit_lend", methods=["GET", "POST"])
@@ -585,7 +600,7 @@ def edit_lend():
         lends = db.execute("SELECT name FROM ? WHERE type = 'Lend' OR type ='synched'", table_to_edit)
         
         # Render the descriptions
-        return render_template("edit_lend.html", lends=lends)
+        return render_template("edit_lend.html", lends=lends, username=username)
   
 
 @app.route("/edit_account", methods=["GET", "POST"])
@@ -671,7 +686,7 @@ def edit_account():
         accounts = db.execute("SELECT name FROM ?", table_to_edit)
         
         # Render the descriptions
-        return render_template("edit_account.html", accounts=accounts)
+        return render_template("edit_account.html", accounts=accounts, username=username)
     
 
 @app.route("/modify_description", methods=["POST", "GET"])
@@ -681,6 +696,9 @@ def modify_description():
     # Load table to edit.
     table_to_edit = session["table_to_edit"]
     
+    # Load the user's username.
+    username = session["username"]
+
     # Load the description to edit.
     current_description = session["current_description"]
     
@@ -713,7 +731,7 @@ def modify_description():
 
     else:
         
-        return render_template("modify_description.html", current_description=current_description)
+        return render_template("modify_description.html", current_description=current_description, username=username)
         
 
 @app.route("/modify_debt", methods=["POST", "GET"])
@@ -758,7 +776,7 @@ def modify_debt():
 
     else:
         
-        return render_template("modify_debt.html", current_debt=current_debt)
+        return render_template("modify_debt.html", current_debt=current_debt, username=username)
 
 
 @app.route("/modify_lend", methods=["POST", "GET"])
@@ -803,7 +821,7 @@ def modify_lend():
 
     else:
         
-        return render_template("modify_lend.html", current_lend=current_lend)
+        return render_template("modify_lend.html", current_lend=current_lend, username=username)
 
 
 @app.route("/modify_account", methods=["POST", "GET"])
@@ -858,14 +876,17 @@ def modify_account():
 
     else:
         
-        return render_template("modify_account.html", current_account=current_account, current_account_balance=current_account_balance)
+        return render_template("modify_account.html", current_account=current_account, current_account_balance=current_account_balance, username=username)
 
                  
 @app.route("/lend",methods=["GET", "POST"])
 @login_required
 def lend():
     """Show user's lend list."""
-    
+        
+    # Load users username.
+    username = session["username"]
+
     # Load user's table's names.
     table_name = session["table_name"]
     
@@ -897,7 +918,7 @@ def lend():
         return redirect("/pay_collect")
     
     else:
-        return render_template("lend.html", debts=debts, lends=lends)
+        return render_template("lend.html", debts=debts, lends=lends, username=username)
 
     
 @app.route("/debt", methods=["GET", "POST"])
@@ -906,7 +927,10 @@ def borrow():
 
     # Load user's table's names.
     table_name = session["table_name"]
-    
+        
+    # Load users username.
+    username = session["username"]
+
     # Load all the entities where the user borrowed money.
     debts = db.execute("SELECT name, IIF(balance <= 0, 0, ABS(balance)) AS balance, type FROM ? WHERE type = 'Debt' or type = 'synched'", table_name[3])
     
@@ -935,16 +959,19 @@ def borrow():
         return redirect("/pay_collect")
     
     else:
-        return render_template("debt.html", debts=debts, lends=lends)
-    
+        return render_template("debt.html", debts=debts, lends=lends, username=username)
     
 @app.route("/history")
 @login_required
 def history():
-    """Show history of transactions"""
+    """Show history of transactions"""    
+    
+    # Load users username.
+    username = session["username"]
+
     transactions = db.execute("SELECT * FROM ? ORDER BY id DESC", session.get("username"))
 
-    return render_template("history.html", transactions=transactions)
+    return render_template("history.html", transactions=transactions, username=username)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -1020,14 +1047,14 @@ def register():
         # Validate username submitted.
 
         # Initialize message.
-        message = "Error:"
+        message = ""
 
         # Error detector.
         error_detector = 0
 
         # Scenario 1: No username input.
         if not username:
-            message = message + "\nNo username"
+            message = message + "\nno username"
             error_detector = 400
 
         # Scenario 2: There is username, but not unique.
@@ -1038,17 +1065,18 @@ def register():
         # Validate password submitted.
         # Scenario 1: No password input.
         if not password:
-            message = message + "\nNo password"
+            message = message + "\nno password"
             error_detector = 400
 
         # Scenario 2: Password and confirm password did not match.
         elif password != confirm_password:
-            message = message + "\nPasswords did not match"
+            message = message + "\npasswords did not match"
             error_detector = 400
 
         # Scenario 3: Password is not strong enough.
         elif check_password_strength(password) != 5:
-            message = message + "\nPassword not strong enough!"
+            message = message + "\npassword not strong enough"
+            error_detector = 400
 
         # User's registration has error/s.
         if error_detector != 0:
@@ -1057,71 +1085,72 @@ def register():
             return apology(message, error_detector)
 
         # User's registration is free from errors.
+        else:
+            
+            # Hash the user's password.
+            hash = generate_password_hash(password)
+            
+            # Remember registrants inputs.
+            db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
+            
+            # Create user table's name.
+            table_name = [
+                str(username + "_accounts"),
+                str(username + "_categories"),
+                username,
+                str(username + "_debt_receivable"),
+                str(username + "_description")]
+            
+            # Store table names into a session.
+            session["table_name"] = table_name
+            
+            # Create users' account database.
+            db.execute("CREATE TABLE ? (\
+                id INTEGER PRIMARY KEY,\
+                name TEXT,\
+                balance REAL)", table_name[0])
+            
+            # Populate user's account with default accounts.
+            for i in range(3):
+                name = str(f"Account {i + 1}")
+                db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[0], name, 0)        
+            for j in range(2):
+                name = str(f"Savings {j + 1}")
+                db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[0], name, 0)        
 
-        # Hash the user's password.
-        hash = generate_password_hash(password)
+            # Create users' category database.
+            db.execute("CREATE TABLE ? (\
+                id INTEGER PRIMARY KEY,\
+                name TEXT,\
+                operation INTEGER,\
+                lend_or_borrow INTEGER)", table_name[1])
+            
+            # Populate user's transaction category with dafault categories.
+            db.execute("INSERT INTO ? (\
+                name, operation, lend_or_borrow)\
+                VALUES ('Income', 1, 0), ('Expense', -1, 0),\
+                ('Transfer', 0, 0),\
+                ('Debt', 1, 1), ('Lend', -1, 1),\
+                ('Debt Payment', -1, 0), ('Lend Collection', 1, 0)", table_name[1])
 
-        # Remember registrants inputs.
-        db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, hash)
-        
-        # Create user table's name.
-        table_name = [
-            str(username + "_accounts"),
-            str(username + "_categories"),
-            username,
-            str(username + "_debt_receivable"),
-            str(username + "_description")]
-        
-        # Store table names into a session.
-        session["table_name"] = table_name
-        
-        # Create users' account database.
-        db.execute("CREATE TABLE ? (\
-            id INTEGER PRIMARY KEY,\
-            name TEXT,\
-            balance REAL)", table_name[0])
-        
-        # Populate user's account with default accounts.
-        for i in range(3):
-            name = str(f"Account {i + 1}")
-            db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[0], name, 0)        
-        for j in range(2):
-            name = str(f"Savings {j + 1}")
-            db.execute("INSERT INTO ? (name, balance) VALUES (?, ?)", table_name[0], name, 0)        
-
-        # Create users' category database.
-        db.execute("CREATE TABLE ? (\
-            id INTEGER PRIMARY KEY,\
-            name TEXT,\
-            operation INTEGER,\
-            lend_or_borrow INTEGER)", table_name[1])
-        
-        # Populate user's transaction category with dafault categories.
-        db.execute("INSERT INTO ? (\
-            name, operation, lend_or_borrow)\
-            VALUES ('Income', 1, 0), ('Expense', -1, 0),\
-            ('Transfer', 0, 0),\
-            ('Debt', 1, 1), ('Lend', -1, 1),\
-            ('Debt Payment', -1, 0), ('Lend Collection', 1, 0)", table_name[1])
-
-        # Create user's transaction history database.
-        db.execute("CREATE TABLE ? (\
-            id INTEGER PRIMARY KEY,\
-            time TIMESTAMP DEFAULT (datetime('now', 'localtime')),\
-            description TEXT,\
-            amount REAL,\
-            category TEXT,\
-            receiver TEXT,\
-            sender TEXT)", table_name[2])
-                
-        # Create user's debt and receivable tables.
-        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL, type TEXT)",  table_name[3])
-        
-        # Create user's default description.
-        db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
-                        
-        # Redirect to a route that shows user's profile porfolio.
-        return redirect("/login")
+            # Create user's transaction history database.
+            db.execute("CREATE TABLE ? (\
+                id INTEGER PRIMARY KEY,\
+                time TIMESTAMP DEFAULT (datetime('now', 'localtime')),\
+                description TEXT,\
+                amount REAL,\
+                category TEXT,\
+                receiver TEXT,\
+                sender TEXT)", table_name[2])
+                    
+            # Create user's debt and receivable tables.
+            db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, balance REAL, type TEXT)",  table_name[3])
+            
+            # Create user's default description.
+            db.execute("CREATE TABLE ? (id PRIMARY KEY, name TEXT, group_1 TEXT, group_2 TEXT, group_3 TEXT, group_4 TEXT, group_5 TEXT)", table_name[4])
+                            
+            # Redirect to a route that shows user's profile porfolio.
+            return redirect("/login")
 
     else:
 
@@ -1182,9 +1211,3 @@ def check_password_strength(password):
     password_strength += lower + upper + number + symbol
 
     return password_strength
-
-
-def strip_quote(value):
-    """Remove quotation marks."""
-    new_value = value.replace('"','')
-    return new_value

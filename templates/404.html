@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Apology
+{% endblock %}
+
+{% block main %}
+<!-- Begin Page Content -->
+<div class="container-fluid">
+    <!-- 404 Error Text -->
+    <div class="text-center">
+        <div class="error mx-auto" data-text="404">404</div>
+        <p class="lead text-gray-800 mb-5">Error</p>
+        <p class="text-gray-500 mb-0"><h4>{{ bottom }}</h4></p>
+        <button class="btn btn-primary" style="float:center" onclick="history.back()">Go Back</button>
+    </div>
+
+</div>
+    <!-- /.container-fluid -->
+<!-- End of Main Content -->
+{% endblock %}
+
