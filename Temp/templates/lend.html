@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Lends
+{% endblock %}
+
+{% block main %}
+
+<main class="main-content" style="width:137%">
+
+    <h2>Lends</h2>
+    <hr>
+
+    <div>
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <td>Name</td>
+                    <td>Amount</td>
+                    <td></td>
+                    <td></td>
+                    
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for lend in lends %}
+
+                    <tr>
+
+                        <td>{{ lend.name }}</td>
+                        <td>{{ lend.balance }}</td>
+
+                        <td>
+
+                            <form action="/lend" method="post">
+
+                                <input type="hidden" name="name" value="{{ lend.name }}">
+                                <input type="hidden" name="amount" value="{{ lend.balance }}">
+                                <input type="hidden" name="pay_collect" value="Collection from">
+
+                                {% if lend.balance != 0 %}
+                                <button type="submit">Collect</button>
+                                {% endif %}
+
+                            </form>
+
+                        </td>
+
+
+                        <td>
+
+                            <form action="/synch" method="post">
+
+                            {% for debt in debts %}
+
+                                {% if lend.name == debt.name %}
+
+                                <input type="hidden" name="name" value="{{ lend.name }}">
+                                <input type="hidden" name="type" value="{{ lend.type }}">
+                                <input type="hidden" name="request_source" value="lend">
+
+                                <button type="submit">Synch</button>
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                            </form>
+
+
+                            <form action="/unsynch" method="post">
+
+                                {% if lend.type == "synched" %}
+
+                                <input type="hidden" name="name" value="{{ lend.name }}">
+                                <input type="hidden" name="type" value="{{ lend.type }}">
+                                <input type="hidden" name="request_source" value="lend">
+
+                                <button type="submit">Unsynch</button>
+
+                                {% endif %}
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</main>
+
+{% endblock %}

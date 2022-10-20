@@ -7,28 +7,23 @@
 {% block main %}
     <h2>Edit</h2><hr>
 
-    <div>
-
+    <!-- Basic Card Example -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Basic Card Example</h6>
+        </div>
+        <div class="card-body">
             <table>
-
                 <tbody>
-
                         <tr>
-
                             <td>Descriptions</td>
-
                             <td>
-
                                 <form action="/edit" method="post">
                                     <input type="hidden" name="table_to_edit" value="description">
                                     <button type="submit">Edit</button>
                                 </form>
-
                             </td>
-            
                         </tr>
-
-
                         <tr>
 
                             <td>Accounts</td>
@@ -77,6 +72,8 @@
                 </tbody>
 
             </table>
-            
+        </div>
     </div>
+
+
 {% endblock %}

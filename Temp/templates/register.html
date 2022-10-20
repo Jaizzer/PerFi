@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+
+    <form action="/register" method="post">
+
+        <div class="mb-3">
+            <input name="username" placeholder="Username" type="text">
+        </div>
+
+        <div class="mb-3">
+            <input name="password" placeholder="Password" type="password">
+        </div>
+
+        <div class="mb-3">
+            <input name="confirmation" placeholder="Confirm Password" type="password">
+        </div>
+
+        <button type="submit">Register</button>
+
+    </form>
+    
+
+    <div>
+
+        <table>
+
+            <tbody>
+                <tr>
+                    <th><h6>Your password must:</h6></th>
+                </tr>
+
+                <tr>
+                    <th><h6>1. Contain lower case letters</h6></th>
+                </tr>
+
+                <tr>
+                    <th><h6>2. Contain upper case letters</h6></th>
+                </tr>
+
+                <tr>
+                    <th><h6>3. Contain numbers</h6></th>
+                </tr>
+
+                <tr>
+                    <th><h6>4. Contain special symbols</h6></th>
+                </tr>
+
+                <tr>
+                    <th><h6>5. Be atleast 10 characters long</h6></th>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+{% endblock %}
+

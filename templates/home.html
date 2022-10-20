@@ -5,100 +5,121 @@
 {% endblock %}
 
 {% block main %}
-
-        <div>
-            <h4>{{ username }}</h4>
-        </div>
-
-        <div>
-
-            <form action="/edit" method="post">
-
-                <div>
-                    <input type="hidden" name="table_to_edit" value="description">
-                    <button href="/edit">+</button>
-                </div>
-
-            </form>
-
-            <form action="/" method="post">
-            <div>
-                <div>
-                    
-                    <select name="description">
-
-                        <option disabled selected>Description</option>
-                        {% for description in descriptions %}
-                        <option value="{{ description.name}}">{{ description.name }}</option>
-                        {% endfor %}
-
-                    </select>
+<div>
+    <!-- Accounts -->
+    <div class="container-fluid" style="padding-left: 11px; padding-right: 0px">
+        <div class="parent">
+            {% for account in accounts %}
+            <div class="col-xl-3 col-md-6 mb-4 child">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    {{ account.name }}</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ account.balance }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-                <div>
-                    <input name="amount" placeholder="Amount" type="number", min="1">
-                </div>
-
-                <div>
-
-                    <select name="account">
-
-                        <option disabled selected>Account To Use</option>
-                        {% for account in accounts %}
-                        <option value="{{ account.name }}">{{ account.name }}</option>
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-                <div>
-
-                    <select name="category">
-
-                        <option disabled selected>Transaction Type</option>
-                        {% for category in categories %}
-                        <option value="{{ category.name }}">{{ category.name }}</option>
-                        {% endfor %}
-
-                    </select>
-
-                </div>
-
-                <button type="submit">Proceed</button>
-
-            </form>
-
+            {% endfor %}
         </div>
-    
-
-        <div>
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <td>Account</td>
-                        <td>Balance</td>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for account in accounts %}
-                    <tr>
-                        <td>{{ account.name }}</td>
-                        <td>{{ account.balance }}</td>
-                    </tr>
-                    {% endfor %}
-                    
-                </tbody>
-
-            </table>
-
-        </div>    
-    
+    </div>
+    <!-- End of Accounts -->
+    <div class="row" style="padding-left: 11px">
+        <!-- Form Area -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div
+                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Add New Transaction</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Dropdown Header:</div>
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    <div>
+                        <form action="/" method="post" onsubmit="return confirm('Do you really want to proceed with this transaction?');">
+                            <div style="margin-bottom:15px">
+                                <input type="text" list="name" name="description" class="form-control bg-light border-0 small" placeholder="Description" style="margin-bottom:20px" required>
+                                    <datalist id="name">
+                                        {% for description in descriptions %}
+                                        <option value="{{ description.name}}">
+                                        {% endfor %}
+                                    </datalist>
+                            </div>
+                            <div style="margin-bottom:15px">
+                                <input name="amount" class="form-control bg-light border-0 small"
+                                    placeholder="Amount" type="number" step="0.01" min="0.01" style="width:180px flex:none" required>
+                            </div>
+                            <div style="margin-bottom:15px">
+                                <select class="custom-select bg-light border-0 small" name="account" style="width:180px flex:none" required>
+                                    <option disabled selected value="">Account To Use</option>
+                                    {% for account in accounts %}
+                                    <option value="{{ account.name }}">{{ account.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div style="margin-bottom:15px">       
+                                <select class="custom-select bg-light border-0 small" name="category" style="width:180px flex:none" required>
+                                    <option disabled selected value="">Transaction Type</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.name }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" style="width:100%" type="submit">Proceed</button>
+                        </form>
+                    </div>
+                    <hr class="sidebar-divider">
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div
+                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Add New Transaction</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Dropdown Header:</div>
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    <div class="chart-area">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

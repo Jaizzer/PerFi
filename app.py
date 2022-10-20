@@ -58,13 +58,17 @@ def index():
             request.form.get("account"), 
             request.form.get("description")]
         
-        # Reload page if user did not input anythin.
+        # Reload page if user did not input anything.
         if None in session["transaction"]:
             return redirect("/")
 
         # Check if user completed all the inputs.
         else:
             
+            # Insert description in the database if it still does not exists.
+            if len(db.execute("SELECT name FROM ? WHERE name = ?", table_name[4], request.form.get("description"))) == 0:
+                db.execute("INSERT INTO ? (name) VALUES (?)", table_name[4], request.form.get("description"))
+                
             # Get the current balance of the user's selected account.
             current_balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_name[0], session["transaction"][4])[0]["balance"]
             
@@ -104,13 +108,7 @@ def regular():
 
     # Determine whether to use addition or subtraction.
     operation = db.execute("SELECT operation FROM ? WHERE name = ?", table_name[1], session["transaction"][2])[0]["operation"]
-    
-    # Make the amount positive (Income) or negative (Expense).
-    session["transaction"][3] = operation * session["transaction"][3]
-
-    # Load user's current transaction information from a session.
-    transaction = session["transaction"]
-
+        
     # The category is transfer.
     if operation == 0:
     
@@ -119,7 +117,12 @@ def regular():
 
     # The category is either "Income" or "Expense".
     else:
-        
+        # Make the amount positive (Income) or negative (Expense).
+        session["transaction"][3] = operation * session["transaction"][3]
+
+        # Load user's current transaction information from a session.
+        transaction = session["transaction"]
+
         # Update user's selected account.
         db.execute("UPDATE ? SET balance = balance + ?\
             WHERE name = ?", table_name[0], transaction[3], transaction[4])
@@ -151,9 +154,9 @@ def transfer():
     if request.method == "POST":
         
         account_to_transfer = request.form.get("account_to_transfer")
-                
+                        
         # Update user's selected account.
-        db.execute("UPDATE '{}' SET balance = balance - {} WHERE name = '{}'".format(table_name[0], *transaction[3:]))
+        db.execute("UPDATE '{}' SET balance = balance - {} WHERE name = '{}'".format(table_name[0], *transaction[3:5]))
         
         # Update user's selected account.
         db.execute("UPDATE '{}' SET balance = balance + {} WHERE name = '{}'".format(table_name[0], transaction[3], account_to_transfer))
@@ -178,12 +181,12 @@ def lend_or_borrow():
     
     # Load user's table's name from a session.
     table_name = session["table_name"]
+    
+    # Load user's current transaction information from a session.
+    transaction = session["transaction"]
 
     if request.method == "POST": 
-        
-        # Load user's current transaction information from a session.
-        transaction = session["transaction"]
-        
+                
         # Get the name where the user borrowed or lended money.
         name = request.form.get("name")
         session["name"] = name
@@ -260,8 +263,14 @@ def lend_or_borrow():
         # Load the people where user borrowed or lended money.        
         people =  db.execute("SELECT * FROM ? WHERE (type = ? OR type = 'synched')", table_name[3], session["transaction"][2])
         
+        # Create confirmation message.
+        if transaction[2] == 'Debt':
+            confirmation =  "Are you sure you want to borrow " + str(transaction[3]) + " from "
+        else:
+            confirmation =  "Are you sure you want to lend " + str(transaction[3]) + " to "
+
         # Render the form.
-        return render_template("lend_or_borrow.html", category=session["transaction"][2], people=people)
+        return render_template("lend_or_borrow.html", category=transaction[2], people=people, amount=transaction[3], confirmation=confirmation)
 
 
 @app.route("/synch", methods=["POST","GET"])
@@ -415,141 +424,53 @@ def pay_collect():
             pay_collect=session["pay_collect"], caption=session["caption"], block_title=session["block_title"])
     
     
-@app.route("/edit", methods=["GET", "POST"])
+@app.route("/edit_description", methods=["GET", "POST"])
 @login_required
-def edit():
-    
-    if request.method == "POST":
-        
-        # Load the user's username.
-        username = session["username"]
-        
-        # Identify what database table to edit.
-        table_type = request.form.get("table_to_edit")
-        
-        # Create a debt or lend filter if invovled in the transaction.
-        filter = None
-        
-        # Create corresponding form placeholder base on the table type.
-        placeholder_caption = "Add new " + table_type
-            
-        # Create corresponding block title.
-        block_title = "Edit " + table_type
-            
-        # The table type is either debt or lend.
-        if table_type in ["Lend", "Debt"]:
-            
-            # Set filter to either debt or lend.
-            filter = table_type
-                        
-            # Create corresponding block title.
-            block_title = "Edit " + table_type + " list"
-            
-            # Get the elements from the table to edit.
-            elements = db.execute("SELECT name FROM ? WHERE (type LIKE ? or type = 'synched')", (username + "_debt_receivable"), filter)
-
-            # Set table type as debt_receivable.
-            table_type = "debt_receivable"
-            
-        # The table type is not lend nor lend.
-        else:
-            
-            # Get the elements from the table to edit.
-            elements = db.execute("SELECT name FROM ? ", (username + "_" + table_type))
-              
-        # Make balance form hidden if the user will edit description and visible otherwise.
-        balance_visibility = "hidden" if table_type != "accounts" else "number"
-        name_visibility = "hidden" if table_type == "debt_receivable" else "text"
-        button_visibility = 'hidden' if table_type == "debt_receivable" else "None"
-        
-        # Remmember html variables for later use.
-        session["table_type"] = table_type
-        session["balance_visibility"] = balance_visibility
-        session["button_visibility"] = button_visibility
-        session["name_visibility"] = name_visibility
-        session["placeholder_caption"] = placeholder_caption
-        session["block_title"] = block_title
-        session["filter"] = filter
-                
-        # Redirect to edit_2 route.
-        return redirect("/edit_2")
-        
-    else:
-        
-        return render_template("edit.html")
-
-
-@app.route("/edit_2", methods=["POST", "GET"])
-@login_required
-def edit_2():
+def edit_description():
     
     # Load the user's username.
     username = session["username"]
     
-    # Load the table type from a session.
-    table_type = session["table_type"]
-    
-    # Get the specific table name to edit.
-    table_to_edit = username + "_" + table_type
-    
-    # Remember table to edit.
-    session["table_to_edit"] = table_to_edit
+    # Save the table to edit.
+    table_to_edit = username + "_description"
     
     if request.method == "POST":
-        
+    
         # Get the chosen edit method.
         method = request.form.get("method")
                                 
         # User wants to modify or create.
         if method in ["modify", "create"]:
             
-            # Set balance form creator to True if type involves balance (account, debt, lend).
-            balance_form_creator = True if table_type != "description" else False
-            
-            # Set synch button creator to True if type involves debt or lend.
-            synch_button_creator = True if table_type in ["debt", "lend"] else False
-            
             # User wants to modify.
             if method == "modify":
                 
                 # Get the modified name for the account and save it into a sesison.
-                session["current_element_name"] = request.form.get("current_element_name")
+                session["current_description"] = request.form.get("current_description")
+                
+                # Remember table to edit.
+                session["table_to_edit"] = table_to_edit
                 
                 # Reroute user to the modification form.
-                return redirect("/modify")
+                return redirect("/modify_description")
                                         
-            # user wants to create
+            # User wants to create
             elif method == "create":
                 
                 # Get the name to create.
-                element_to_create = request.form.get("element_to_create")
+                description_to_create = request.form.get("description_to_create")
                 
                 # User input an element.
-                if element_to_create:
+                if description_to_create:
                     
                     # Insert new description in the database if new.
-                    if len(db.execute("SELECT name FROM ? WHERE name = ?", table_to_edit, element_to_create)) == 0:
-                        db.execute("INSERT INTO ? (name) VALUES (?)", table_to_edit, element_to_create)
-                        
-                        # The element to create has a balance category.
-                        if table_type != "description":
-                            
-                            # Get the balance to put it there is any.
-                            new_element_balance = request.form.get("new_element_balance")
-                                                        
-                            # User did not input any in the balance form.
-                            if not new_element_balance:
-                                
-                                # Set balance to zero if user did not input any.
-                                new_element_balance = float(0)
-                                
-                            # Put the balance in.
-                            db.execute("UPDATE ? SET balance = ? WHERE name = ?", table_to_edit, float(new_element_balance), element_to_create)
-                                                    
+                    if len(db.execute("SELECT name FROM ? WHERE name = ?", table_to_edit, description_to_create)) == 0:
+                        db.execute("INSERT INTO ? (name) VALUES (?)", table_to_edit, description_to_create)
+                                                                            
                     else:
                     
                         # Send error message to user.
-                        return apology(f"{element_to_create} already exists!")
+                        return apology(f"{description_to_create} already exists!")
 
                 else:
                     
@@ -560,127 +481,384 @@ def edit_2():
         else:
                 
             # Load the element to delete.
-            element_to_delete = request.form.get("element_to_delete")
+            description_to_delete = request.form.get("description_to_delete")
 
-            # Delete the element selected by the user.
-            if element_to_delete:
-                
-                # If user will delete in accounts or descriptions table.
-                if table_type in ["accounts", "description"]:
-                    db.execute("DELETE FROM ? WHERE name = ?", table_to_edit, element_to_delete)
-                
-                # User will delete from the debt_receivable table.
-                else:
-                    db.execute("DELETE FROM ? WHERE ((name = ?) AND (type = ? or type = 'synched'))", table_to_edit, element_to_delete, session["filter"])
-                        
-        return redirect("/edit_2")
+            # Delete the description
+            db.execute("DELETE FROM ? WHERE name = ?", table_to_edit, description_to_delete)
+        
+        # Reload page.                
+        return redirect("/edit_description")
         
     else:
         
-        # Unload all html variables from a session.
-        balance_visibility = session["balance_visibility"]
-        name_visibility = session["name_visibility"]
-        button_visibility = session["button_visibility"]
-        placeholder_caption = session["placeholder_caption"]
-        block_title = session["block_title"]
-        filter = session["filter"]
+        # Get all the descriptions from the database.
+        descriptions = db.execute("SELECT name FROM ?", table_to_edit)
         
-        # Identify table type.
-        table_type = session["table_type"]
-        
-        # Load all the elements depending on the type.
-        if table_type == "debt_receivable":
-            
-            # Load all debt/receivable elements.
-            elements = db.execute("SELECT name FROM ? WHERE (type LIKE ? or type = 'synched')", table_to_edit, filter)
-        
-        else:
-            
-            # Load non debt/receivable elemenets (descriptions or accounts)
-            elements = db.execute("SELECT name FROM ? ", table_to_edit)
-        
-        # Redirect user to the corresponding page.
-        return render_template("edit_general.html", elements=elements, placeholder_caption=placeholder_caption,\
-            balance_visibility=balance_visibility, name_visibility=name_visibility, button_visibility=button_visibility,\
-            table_type=table_type, block_title=block_title, strip_quote=strip_quote)
-
-
-@app.route("/modify", methods=["POST", "GET"])
+        # Render the descriptions
+        return render_template("edit_description.html", descriptions=descriptions)
+    
+    
+@app.route("/edit_debt", methods=["GET", "POST"])
 @login_required
-def modify():
+def edit_debt():
     
-    # Load user's username.
-    username = request.form.get("username")
+    # Load the user's username.
+    username = session["username"]
     
-    # Load all user's table name from a session.
-    table_type = session["table_type"]
+    # Save the table to edit.
+    table_to_edit = username + "_debt_receivable"
     
-    # Load the table to edit from a session.
+    if request.method == "POST":
+    
+        # Get the chosen edit method.
+        method = request.form.get("method")
+                                
+        # User wants to modify or create.
+        if method == "modify":
+                            
+            # Get the modified name for the debt and save it into a sesison.
+            session["current_debt"] = request.form.get("current_debt")
+            
+            # Reroute user to the modification form.
+            return redirect("/modify_debt")
+                                                
+        # User wants to delete.
+        else:
+                
+            # Load the debt to delete.
+            debt_to_delete = request.form.get("debt_to_delete")
+
+            # Delete the debt
+            db.execute("DELETE FROM ? WHERE name = ?", table_to_edit, debt_to_delete)
+        
+        # Reload page.                
+        return redirect("/edit_debt")
+        
+    else:
+        
+        # Get all the debt from the database.
+        debt = db.execute("SELECT name FROM ? WHERE type = 'Debt' OR type ='synched'", table_to_edit)
+        
+        # Render the descriptions
+        return render_template("edit_debt.html", debts=debt)
+
+
+@app.route("/edit_lend", methods=["GET", "POST"])
+@login_required
+def edit_lend():
+    
+    # Load the user's username.
+    username = session["username"]
+    
+    # Save the table to edit.
+    table_to_edit = username + "_debt_receivable"
+    
+    if request.method == "POST":
+    
+        # Get the chosen edit method.
+        method = request.form.get("method")
+                                
+        # User wants to modify or create.
+        if method == "modify":
+                            
+            # Get the modified name and save it into a sesison.
+            session["current_lend"] = request.form.get("current_lend")
+            
+            # Reroute user to the modification form.
+            return redirect("/modify_lend")
+                                                
+        # User wants to delete.
+        else:
+                
+            # Load the debt to delete.
+            lend_to_delete = request.form.get("lend_to_delete")
+
+            # Delete the debt
+            db.execute("DELETE FROM ? WHERE name = ?", table_to_edit, lend_to_delete)
+        
+        # Reload page.                
+        return redirect("/edit_lend")
+        
+    else:
+        
+        # Get all the debt from the database.
+        lends = db.execute("SELECT name FROM ? WHERE type = 'Lend' OR type ='synched'", table_to_edit)
+        
+        # Render the descriptions
+        return render_template("edit_lend.html", lends=lends)
+  
+
+@app.route("/edit_account", methods=["GET", "POST"])
+@login_required
+def edit_account():
+    
+    # Load the user's username.
+    username = session["username"]
+    
+    # Save the table to edit.
+    table_to_edit = username + "_accounts"
+    
+    if request.method == "POST":
+    
+        # Get the chosen edit method.
+        method = request.form.get("method")
+                                
+        # User wants to modify or create.
+        if method in ["modify", "create"]:
+            
+            # User wants to modify.
+            if method == "modify":
+                
+                # Get the modified name for the account and save it into a sesison.
+                session["current_account"] = request.form.get("current_account")
+                
+                # Reroute user to the modification form.
+                return redirect("/modify_account")
+                                        
+            # User wants to create
+            elif method == "create":
+                
+                # Get the name to create.
+                account_to_create = request.form.get("account_to_create")
+                
+                # User input an element.
+                if account_to_create:
+                    
+                    # Account does not exist yet.
+                    if len(db.execute("SELECT name FROM ? WHERE name = ?", table_to_edit, account_to_create)) == 0:
+                        
+                        # Insert the new account name.
+                        db.execute("INSERT INTO ? (name) VALUES (?)", table_to_edit, account_to_create)
+                        
+                        # Get the balance to put in, if the user insert any.
+                        new_account_balance = request.form.get("new_account_balance")
+                                                    
+                        # User did not input any in the balance form.
+                        if not new_account_balance:
+                            
+                            # Set balance to zero if user did not input any.
+                            new_account_balance = float(0)
+                            
+                        # Put the balance in.
+                        db.execute("UPDATE ? SET balance = ? WHERE name = ?", table_to_edit, float(new_account_balance), account_to_create)
+
+                    # Account name already exists.
+                    else:
+                    
+                        # Send error message to user.
+                        return apology(f"{account_to_create} already exists!")
+
+                else:
+                    
+                    # Return error message.
+                    return apology("Input missing")
+        
+            # User wants to delete.
+        else:
+                
+            # Load the element to delete.
+            account_to_delete = request.form.get("account_to_delete")
+
+            # Delete the account
+            db.execute("DELETE FROM ? WHERE name = ?", table_to_edit, account_to_delete)
+        
+        # Reload page.                
+        return redirect("/edit_account")
+        
+    else:
+        
+        # Get all the descriptions from the database.
+        accounts = db.execute("SELECT name FROM ?", table_to_edit)
+        
+        # Render the descriptions
+        return render_template("edit_account.html", accounts=accounts)
+    
+
+@app.route("/modify_description", methods=["POST", "GET"])
+@login_required
+def modify_description():
+    
+    # Load table to edit.
     table_to_edit = session["table_to_edit"]
     
-    # Load the description to be renamed.
-    current_element_name = session["current_element_name"]
+    # Load the description to edit.
+    current_description = session["current_description"]
     
-    # Load the element's current balance if table type is accounts.
-    if table_type == "accounts":
-        
-        current_element_balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_to_edit, current_element_name)[0]["balance"]
-        
-        # Set the balance form to text.
-        visibility = "text"
-                
-    else:
-        
-        current_element_balance = None
-        
-         # Set the balance form's visibility to hidden..
-        visibility = "hidden"
-    
-
     if request.method == "POST":
         
-        # Get the new element name.
-        new_element_name = request.form.get("new_element_name")
+        # Get the new decription.
+        new_description = request.form.get("new_description")
         
-        # Get the new balance of the element if table type involves balance.
-        new_element_balance = request.form.get("new_element_balance")
-            
-        # Process the user's input for the new name.
-        if new_element_name:
+        # Process the user's input for the new description.
+        if new_description:
             
             # Check the existence of username in the database.
-            existence = db.execute("SELECT name FROM ? where name = ?", table_to_edit, new_element_name)
+            existence = db.execute("SELECT name FROM ? where name = ?", table_to_edit, new_description)
             
             # Name already exists.
             if existence:
-                return apology(f"{new_element_name} already exists!")
+                return apology(f"{new_description} already exists!")
             
             # Name does not exist.
             else:
                 
-                # User wants to modify elements from description or account tables.
-                if table_type != "debt_receivable":
-                    db.execute("UPDATE ? SET name = ? WHERE name = ?",  table_to_edit, new_element_name, current_element_name)
+                # Update description.
+                db.execute("UPDATE ? SET name = ? WHERE name = ?",  table_to_edit, new_description, current_description)
                     
-                # User wants to modifyn debt/receivables table.
-                else:
-                    db.execute("UPDATE ? SET name = ? WHERE ((name = ?) AND (type = ? or type = 'synched'))", table_to_edit, new_element_name, current_element_name, session["filter"])
-                
-            # Set the current element name to its new name.
-            current_element_name = new_element_name
+            # Set the current description to the new description.
+            current_description = new_description
             
-        # Update the element's current amound if the user input one.
-        if new_element_balance and table_type != "description":
-            db.execute("UPDATE ? SET balance = ? WHERE name = ?",  table_to_edit, new_element_balance, current_element_name)
-
         # Redirect back to edit menu.          
-        return redirect("/edit_2")
+        return redirect("/edit_description")
 
     else:
         
-        #return apology(str(current_element_balance) + str(current_element_name))
-        return render_template("modify.html", current_element_name=current_element_name, current_element_balance=current_element_balance,\
-            visibility=visibility, table_type=session["table_type"])
+        return render_template("modify_description.html", current_description=current_description)
+        
+
+@app.route("/modify_debt", methods=["POST", "GET"])
+@login_required
+def modify_debt():
+    
+    # Load users username.
+    username = session["username"]
+    
+    # Load table to edit.
+    table_to_edit = username + "_debt_receivable"
+    
+    # Load the debt to edit.
+    current_debt = session["current_debt"]
+    
+    if request.method == "POST":
+        
+        # Get the new decription.
+        new_debt = request.form.get("new_debt")
+        
+        # Process the user's input for the new debt.
+        if new_debt:
+            
+            # Check the existence of username in the database.
+            existence = db.execute("SELECT name FROM ? WHERE (name = ? AND (type = 'Debt' or type = 'synched'))", table_to_edit, new_debt)
+            
+            # Name already exists.
+            if existence:
+                return apology(f"{new_debt} already exists!")
+            
+            # Name does not exist.
+            else:
+                
+                # Update debt.
+                db.execute("UPDATE ? SET name = ? WHERE name = ?",  table_to_edit, new_debt, current_debt)
+                    
+            # Set the current debt to the new debt.
+            current_debt = new_debt
+            
+        # Redirect back to edit menu.          
+        return redirect("/edit_debt")
+
+    else:
+        
+        return render_template("modify_debt.html", current_debt=current_debt)
+
+
+@app.route("/modify_lend", methods=["POST", "GET"])
+@login_required
+def modify_lend():
+    
+    # Load users username.
+    username = session["username"]
+    
+    # Load table to edit.
+    table_to_edit = username + "_debt_receivable"
+    
+    # Load the lend to edit.
+    current_lend = session["current_lend"]
+    
+    if request.method == "POST":
+        
+        # Get the new decription.
+        new_lend = request.form.get("new_lend")
+        
+        # Process the user's input for the new lend.
+        if new_lend:
+            
+            # Check the existence of username in the database.
+            existence = db.execute("SELECT name FROM ? WHERE (name = ? AND (type = 'Lend' or type = 'synched'))", table_to_edit, new_lend)
+            
+            # Name already exists.
+            if existence:
+                return apology(f"{new_lend} already exists!")
+            
+            # Name does not exist.
+            else:
+                
+                # Update lend.
+                db.execute("UPDATE ? SET name = ? WHERE name = ?",  table_to_edit, new_lend, current_lend)
+                    
+            # Set the current lend to the new lend.
+            current_lend = new_lend
+            
+        # Redirect back to edit menu.          
+        return redirect("/edit_lend")
+
+    else:
+        
+        return render_template("modify_lend.html", current_lend=current_lend)
+
+
+@app.route("/modify_account", methods=["POST", "GET"])
+@login_required
+def modify_account():
+    
+    # Load users username.
+    username = session["username"]
+    
+    # Load table to edit.
+    table_to_edit = username + "_accounts"
+
+    # Load the account to edit.
+    current_account = session["current_account"]
+
+    # Load the amount.
+    current_account_balance = db.execute("SELECT balance FROM ? WHERE name = ?", table_to_edit, current_account)[0]["balance"]
+
+    if request.method == "POST":
+        
+        # Get the new decription.
+        new_account = request.form.get("new_account")
+
+        # Get the new decription.
+        new_balance = request.form.get("new_account_balance")
+        
+        # Process the user's input for the new account.
+        if new_account:
+            
+            # Check the existence of username in the database.
+            existence = db.execute("SELECT name FROM ? WHERE name = ?", table_to_edit, new_account)
+            
+            # Name already exists.
+            if existence:
+                return apology(f"{new_account} already exists!")
+            
+            # Name does not exist.
+            else:
+                
+                # Update account.
+                db.execute("UPDATE ? SET name = ? WHERE name = ?",  table_to_edit, new_account, current_account)
+                    
+            # Set the current account to the new account.
+            current_account = new_account
+
+        # The user wants to update the account balance.
+        if new_balance:  
+            db.execute("UPDATE ? SET balance = ? WHERE name = ?",  table_to_edit, float(new_balance), current_account)
+            
+        # Redirect back to edit menu.          
+        return redirect("/edit_account")
+
+    else:
+        
+        return render_template("modify_account.html", current_account=current_account, current_account_balance=current_account_balance)
 
                  
 @app.route("/lend",methods=["GET", "POST"])

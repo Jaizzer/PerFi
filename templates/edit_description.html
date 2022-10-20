@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ block_title }}
+{% endblock %}
+
+{% block main %}
+<h2>{{ block_title }}</h2><hr>
+    <!-- Basic Card Example -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Edit Descriptions</h6>
+        </div>
+        <div class="card-body">
+            <!--Start of Form-->
+            <form action="/edit_description" method="post">
+                <div class="input-group">
+                    <input class="form-control bg-light border-0 small" type="text" name="description_to_create" placeholder="Create Description" style="max-width:258px">
+                    <input type="hidden" name="method" value="create">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </div>  
+            </form><hr>
+            <!--End of Form-->
+            <!--Table-->
+            <table>
+                <tbody>
+                    {% for description in descriptions %}
+                    <tr>
+                        <!--Modify Column-->
+                        <form action="/edit_description" method="post">
+                            <td class="padded" style="max-width:120px">{{ description.name }}</td>
+                                <input type="hidden" name="current_description" value="{{ description.name }}">
+                                <input type="hidden" name="method" value="modify">
+                            <td class="padded">
+                                <button type="submit" class="btn btn-success btn-icon-split btn-sm">
+                                    <span class="icon text-white-50">
+                                        <i class="fas fa-pen"></i>
+                                    </span>
+                                <span class="text">Modify</span>
+                                </button>
+                            </td>
+                        </form>
+                        <!--End of Modify Column-->
+                        <!--Delete Column-->
+                        <form action="/edit_description" method="post">
+                            <td class="padded">
+                                <input type="hidden" name="description_to_delete" value="{{ description.name }}">
+                                <input type="hidden" name="method" value="delete">    
+                                <button type="submit" class="btn btn-danger btn-icon-split btn-sm">
+                                    <span class="icon text-white-50">
+                                        <i class="fas fa-trash"></i>
+                                    </span>
+                                <span class="text">Delete</span>
+                                </button>
+                            </td>
+                        </form>
+                        <!--End of Delete Column-->
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!--End of Table-->
+        </div>
+    </div>
+{% endblock %}

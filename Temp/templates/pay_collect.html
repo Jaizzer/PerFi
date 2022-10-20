@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ block_title }}
+{% endblock %}
+
+{% block main %}
+<main class="main-content" style="width:137%">
+
+    <h2>{{ block_title }}</h2><hr>
+
+    <div>
+
+        <h5>{{ pay_collect }} "{{ name }}"</h5><hr>
+        <h5>{{ caption }}: {{ amount }}</h5><hr>
+
+        <form action="/pay_collect" method="post">
+
+            <div>
+
+                <input name="amount" placeholder="{{ amount }}" type="number", min="1", max="{{ amount }}">
+
+            </div>
+
+            <div>
+
+                <select name="account">
+
+                    <option disabled selected>Account To Use</option>
+
+                    {% for account in accounts %}
+                    <option value="{{ account.name }}">{{ account.name }}</option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <button type="submit">{{ block_title }}</button>
+
+        </form>
+        
+    </div>
+</main>
+
+{% endblock %}

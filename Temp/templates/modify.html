@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Edit {{ table_type }}
+{% endblock %}
+
+{% block main %}
+
+<main class="main-content" style="width:137%">
+
+    <div>
+
+        <header>You are about to modify "{{ current_element_name }}"</header><hr>
+
+        <form action="/modify" method="post">
+
+            <input name="new_element_name" placeholder="Rename: {{ current_element_name }}" type="text">
+            <input name="new_element_balance" placeholder="Balance: {{ current_element_balance }}" type="{{ visibility }}">
+            
+            <button type="submit">Save</button>
+
+        </form>
+
+    </div>
+
+</main>
+
+{% endblock %}

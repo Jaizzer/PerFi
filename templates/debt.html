@@ -6,92 +6,77 @@
 
 {% block main %}
 
-<h2>Debts</h2>
-    <hr>
-
-    <div>
-
+<!-- Basic Card Example -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Debts</h6>
+    </div>
+    <div class="card-body">
+        <!--Table-->
         <table>
-
-            <thead>
-
-                <tr>
-                    <td>Name</td>
-                    <td>Amount</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-
-            </thead>
-
             <tbody>
-
                 {% for debt in debts %}
-
                 <tr>
-                    <td>{{ debt.name }}</td>
-                    <td>{{ debt.balance }}</td>
-                    <td>
-
+                    <td class="padded">{{ debt.name }}</td>
+                    {% if debt.balance == 0 %}
+                        <td class="padded">
+                            <button class="btn btn-info btn-icon-split btn-sm">
+                            <span class="text">Paid</span>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td class="padded">{{ debt.balance }}</td>
+                    {% endif %}
+                    <td class="padded">
                         <form action="/debt" method="post">
-
                             <input type="hidden" name="name" value="{{ debt.name }}">
                             <input type="hidden" name="amount" value="{{ debt.balance }}">
                             <input type="hidden" name="pay_collect" value="Payment to">
-
                             {% if debt.balance != 0 %}
-                                <button type="submit">Pay</button>
+                            <button type="submit" class="btn btn-info btn-icon-split btn-sm">
+                                <span class="icon text-white-50">
+                                    <i class="fa-sharp fa-solid fa-circle-dollar-to-slot"></i>
+                                </span>
+                            <span class="text">Pay</span>
+                            </button>
                             {% endif %}
-
                         </form>
-
                     </td>
-
-                    <td>
-
+                    <td class="padded">
                         <form action="/synch" method="post">
-
                         {% for lend in lends %}
-
                             {% if debt.name == lend.name %}
-
                             <input type="hidden" name="name" value="{{ debt.name }}">
                             <input type="hidden" name="type" value="{{ debt.type }}">
                             <input type="hidden" name="request_source" value="debt">
-
-                            <button type="submit">Synch</button>
-
-                            {% endif %}
-
+                            <button type="submit" class="btn btn-success btn-icon-split btn-sm">
+                                <span class="icon text-white-50">
+                                    <i class="fa-solid fa-rotate"></i>
+                                </span>
+                            <span class="text">Synch</span>
+                            </button>
+                        {% endif %}
                         {% endfor %}
-
                         </form>
-
                         <form action="/unsynch" method="post">
-
                             {% if debt.type == "synched" %}
-
                             <input type="hidden" name="name" value="{{ debt.name }}">
                             <input type="hidden" name="type" value="{{ debt.type }}">
                             <input type="hidden" name="request_source" value="debt">
-
-                            <button type="submit">Unsynch</button>
-
+                            <button type="submit" class="btn btn-warning btn-icon-split btn-sm">
+                                <span class="icon text-white-50">
+                                    <i class="fa-solid fa-x"></i>
+                                </span>
+                            <span class="text">Unsynch</span>
+                            </button>
                             {% endif %}
-
                         </form>
-
                     </td>
-
-
                 </tr>
-
                 {% endfor %}
-
             </tbody>
-
         </table>
-        
+        <!--End of Table-->
     </div>
-
+</div>
 {% endblock %}

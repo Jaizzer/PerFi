@@ -5,58 +5,54 @@
 {% endblock %}
 
 {% block main %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <h1 class="h3 mb-2 text-gray-800">Transaction History</h1>
+    <p class="mb-4">All your transaction goes here!</p>
 
-    <h1 class="heading_type">Transaction History</h1><hr>
-
-    <section>
-
-        <div>
-
-            <div>
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-                            <td>Time</td>
-                            <td>Description</td>
-                            <td>Category</td>
-                            <td>Amount</td>
-                            <td>From</td>
-                            <td>To</td>
-                        </tr>
-
-                    </thead>
-
-                </table>
-            </div>
-
-            <div> 
-
-                <table>
-
-                    <tbody>
-
-                        {% for transaction in transactions %}
-                            <tr>
-                                <td>{{ transaction.time }}</td>
-                                <td>{{ transaction.description }}</td>
-                                <td>{{ transaction.category }}</td>
-                                <td>{{ transaction.amount }}</td>
-                                <td>{{ transaction.sender }}</td>
-                                <td>{{ transaction.receiver }}</td>
-                            </tr>
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-                
-            </div>
-            
+    <!-- DataTales Example -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">History</h6>
         </div>
-
-    </section>
-
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>From</th>
+                            <th>To</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>Time</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>From</th>
+                            <th>To</th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.time }}</td>
+                            <td>{{ transaction.description }}</td>
+                            <td>{{ transaction.category }}</td>
+                            <td>{{ transaction.amount }}</td>
+                            <td>{{ transaction.sender }}</td>
+                            <td>{{ transaction.receiver }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

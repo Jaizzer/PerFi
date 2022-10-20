@@ -5,37 +5,24 @@
 {% endblock %}
 
 {% block main %}
-
-<hr><h5>Synch Confirmation</h5><hr>
-
-
-<div>
-
-    Do you want to synch "{{ name }}" with "{{ name }}" from {{ opposite_transaction_type }} list?
-
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Synch Confirmation</h6>
+    </div>
+    <div class="card-body">
+        <div style="margin-bottom:30px">
+            Matching names found. Do you want to synch this "{{ name }}" with "{{ name }}" from {{ opposite_transaction_type }} list?
+        </div>
+        <div>
+            <form action="/synch" method="post">
+                <input type="hidden" name="approval" value="Yes">
+                <button class="btn btn-success" style="width:10%; margin-bottom:15px; display:inline-block" type="submit">Yes</button>
+            </form>
+            <form action="/synch", method="post">
+                <input type="hidden" name="approval" value="No">
+                <button class="btn btn-danger" style="width:10%" type="submit">No</button>
+            </form>
+        </div>        
+    </div>
 </div>
-
-<div>
-
-    <form action="/synch" method="post">
-
-            <input type="hidden" name="approval" value="Yes">
-            <button type="submit">Yes</button>
-
-    </form>
-
-</div>
-
-<div class="section">
-
-    <form action="/synch", method="post">
-
-        <input type="hidden" name="approval" value="No">
-        <button type="submit">No</button>
-
-    </form>
-
-</div>
-
-
 {% endblock %}

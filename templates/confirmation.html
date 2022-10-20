@@ -5,16 +5,21 @@
 {% endblock %}
 
 {% block main %}
-    <hr><h5>Transaction Summary</h5><hr>
-    <div>
-        <table>
+<!-- Basic Card Example -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Trasaction Confirmation</h6>
+    </div>
+    <div class="card-body">
+        <!--Table-->
+        <table class="table table-bordered" width="100%" cellspacing="0">
             <thead>
                 <tr>
-                    <td>Description</td>
-                    <td>Category</td>
-                    <td>Amount</td>
-                    <td>{{ column_4  }}</td>
-                    <td>{{ column_5 }}</td>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>{{ column_4  }}</th>
+                    <th>{{ column_5 }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,14 +30,15 @@
                     </tr>
             </tbody>
         </table>
-
         <form action="/lend_or_borrow" method="post">
             <input type="hidden" name="name" value="{{ name }}">
-            <button type="submit">Confirm</button>
-        </form
-
+            <button class="btn btn-primary" style="width:100%" type="submit">Confirm</button>
+        </form>
+        <!--End of Table-->
     </div>
+</div>
 
-</main>
+
+
 
 {% endblock %}

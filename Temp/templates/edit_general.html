@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ block_title }}
+{% endblock %}
+
+{% block main %}
+<h2>{{ block_title }}</h2><hr>
+
+    <form action="/edit_2" method="post" type="hidden">
+
+        <input type="{{ name_visibility }}" name="element_to_create" placeholder="{{ placeholder_caption }}">
+        <input type="{{ balance_visibility  }}" min='0' name="amount_to_put" placeholder="Amount">
+        <input type="hidden" name="method" value="create">
+
+        <button type="submit" {{ strip_quote(button_visibility) }}>Create</button>
+
+    </form><hr>
+
+    <table>
+
+            <tbody>
+
+                {% for element in elements %}
+
+                    <tr>
+
+                        <form action="/edit_2" method="post">
+                            <td>{{ element.name }}</td>
+
+                            <input type="hidden" name="current_element_name" value="{{ element.name }}">
+                            <input type="hidden" name="method" value="modify">
+
+                            <td><button type="submit">Modify</button></td>
+
+                        </form>
+
+                        
+                        <form action="/edit_2" method="post">
+
+                            <input type="hidden" name="element_to_delete" value="{{ element.name }}">
+                            <input type="hidden" name="method" value="delete">
+
+                            <td><button type="submit">Delete</button></td>
+
+                        </form>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+</table>
+{% endblock %}
