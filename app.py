@@ -1211,3 +1211,4 @@ def check_password_strength(password):
     password_strength += lower + upper + number + symbol
 
     return password_strength
+

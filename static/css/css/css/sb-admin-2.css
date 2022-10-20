@@ -10518,17 +10518,19 @@ a:focus {
 }
 
 .sidebar .sidebar-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   font-size: 0.875rem;
   border-radius: 0.35rem;
   color: rgba(255, 255, 255, 0.8);
-  padding: 1px;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .sidebar .sidebar-card .sidebar-card-illustration {
   height: 3rem;
   display: block;
-  padding: 1px;
 }
 
 .sidebar .sidebar-card .sidebar-card-title {
