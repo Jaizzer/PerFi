@@ -2,6 +2,7 @@
 
 The project is a web application where the user can track his/her finances. This app has tha ability to keep track of the money in the accounts that the user will create. There are also added functionality such as editing and synching elements and keeping track where the user lended or borrowed moneey.
 
+**Video Demo:** https://youtu.be/GHMvq1e1xFg
 
 ## Technologies Used
 
