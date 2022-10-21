@@ -6,30 +6,50 @@
 
 {% block main %}
 
-    <div>
-
-        <h3>Select Account to Transfer Money.</h3>
-
-        <form action="/transfer" method="post">
-
-            <div>
-
-                <select name="account_to_transfer">
-
-                    <option disabled selected>Account To Transfer</option>
-
-                    {% for account in accounts %}
-                    <option value="{{ account.name }}">{{ account.name }}</option>
-                    {% endfor %}
-
-                </select>
-
+<div class="row" style="padding-left: 11px">
+    <!-- Form Area -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <!-- Card Header - Dropdown -->
+            <div
+                class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Select Account to Transfer Money</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                        aria-labelledby="dropdownMenuLink">
+                        <div class="dropdown-header">Dropdown Header:</div>
+                        <a class="dropdown-item" href="#">Action</a>
+                        <a class="dropdown-item" href="#">Another action</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Card Body -->
+            <div class="card-body">
+                <div>
+                    <div>
+                        <form action="/transfer" method="post">
+                            <div style="margin-bottom:15px">       
+                                <select class="custom-select bg-light border-0 small" name="account_to_transfer" style="width:180px flex:none" required>
+                                    <option disabled selected value="">Accounts</option>
+                                    {% for account in accounts %}
+                                    <option value="{{ account.name }}">{{ account.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" style="width:100%" type="submit">Transfer</button>
+                        </form>
+                    </div>
+                </div>
+                <hr class="sidebar-divider">
             </div>
 
-            <button type="submit">Transfer</button>
-
-        </form>
-
+        </div>
     </div>
-
+</div>
 {% endblock %}

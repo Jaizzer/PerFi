@@ -168,8 +168,8 @@ def transfer():
         db.execute("UPDATE '{}' SET balance = balance + {} WHERE name = '{}'".format(table_name[0], transaction[3], account_to_transfer))
     
         # Update user's transaction history.
-        db.execute("INSERT INTO {} (description, category, amount, receiver, sender)\
-                VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction, account_to_transfer))
+        db.execute("INSERT INTO {} (description, category, amount, sender, receiver)\
+                VALUES ('{}', '{}', {}, '{}', '{}')".format(*transaction[:5], account_to_transfer))
 
         return redirect("/history")
 
