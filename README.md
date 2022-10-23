@@ -19,5 +19,5 @@ The project is a web application where the user can track his/her finances. This
 3. Unzip File.
 4. Access directory via Terminal containing “app.py”. 
 5. Run “flask run” 
-6. Clink the link that will appear on the terminal that looks like these: “http://127.0.0.1:5000".
+6. Clink the link that will appear on the terminal that looks like this: “http://127.0.0.1:5000".
 7. You are ready to go!
